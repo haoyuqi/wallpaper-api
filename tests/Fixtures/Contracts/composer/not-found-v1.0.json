@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "status": "not_found",
+  "query": {
+    "source": "bing",
+    "market": "en-US",
+    "date": "1900-01-01"
+  },
+  "data": null,
+  "rawPayload": {
+    "images": [],
+    "metadata": {}
+  },
+  "error": null,
+  "retrievedAt": "2026-09-01T00:00:00Z"
+}

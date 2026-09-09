@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.1",
+  "status": "found",
+  "query": {
+    "source": "bing",
+    "market": "en-US",
+    "date": "2026-08-31",
+    "localeLabel": "English (United States)"
+  },
+  "data": {
+    "sourceDate": "2026-08-31",
+    "sourceItemId": "0123456789abcdef0123456789abcdef",
+    "title": "Mountain lake at sunrise",
+    "copyright": "Example © Photographer",
+    "copyrightLink": "https://www.bing.com/search?q=example",
+    "imageUrl": "https://www.bing.com/th?id=example_1920x1080.jpg",
+    "downloadUrl": "https://www.bing.com/th?id=example_UHD.jpg",
+    "dimensions": {
+      "width": 3840,
+      "height": 2160
+    }
+  },
+  "rawPayload": {
+    "images": []
+  },
+  "error": null,
+  "retrievedAt": "2026-09-01T00:00:00Z",
+  "producer": "download-bing-wallpaper"
+}

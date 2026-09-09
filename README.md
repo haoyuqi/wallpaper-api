@@ -2,6 +2,10 @@
 
 Use GitHub action to update Bing wallpaper daily.
 
+The replacement metadata API is being designed independently of this legacy
+archive. Its frozen v1 ingestion and public response contract is documented in
+[docs/contracts/v1.md](docs/contracts/v1.md).
+
 ## Today wallpaper
 
 ![2023-03-12](./storage/bing-wallpaper/2023/03/2023-03-12.png)
