@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "status": "error",
+  "query": {
+    "source": "bing",
+    "market": "en-US",
+    "date": "2026-08-31"
+  },
+  "data": null,
+  "rawPayload": null,
+  "error": {
+    "code": "UPSTREAM_UNAVAILABLE",
+    "message": "The Bing metadata service is temporarily unavailable.",
+    "retryable": true
+  },
+  "retrievedAt": "2026-09-01T00:00:00Z"
+}

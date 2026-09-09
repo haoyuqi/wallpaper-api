@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "id": "01K41V6QAZ0000000000000000",
+      "source": "bing",
+      "market": "en-US",
+      "sourceDate": "2026-08-31",
+      "title": "Mountain lake at sunrise",
+      "copyright": "Example © Photographer",
+      "copyrightLink": "https://www.bing.com/search?q=example",
+      "imageUrl": "https://www.bing.com/th?id=example_1920x1080.jpg",
+      "downloadUrl": "https://www.bing.com/th?id=example_UHD.jpg"
+    },
+    {
+      "id": "01K3Z8R7000000000000000000",
+      "source": "bing",
+      "market": "en-US",
+      "sourceDate": "2026-08-30",
+      "title": null,
+      "copyright": null,
+      "copyrightLink": null,
+      "imageUrl": "https://www.bing.com/th?id=second_1920x1080.jpg",
+      "downloadUrl": null
+    }
+  ],
+  "meta": {
+    "query": {
+      "date": null,
+      "from": "2026-08-01",
+      "to": "2026-08-31"
+    },
+    "count": 2
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "status": "found",
+  "query": {
+    "source": "bing",
+    "market": "en-US",
+    "date": "2026-08-31"
+  },
+  "data": {
+    "sourceDate": "2026-08-31",
+    "sourceItemId": "0123456789abcdef0123456789abcdef",
+    "title": "Mountain lake at sunrise",
+    "copyright": "Example © Photographer",
+    "copyrightLink": "https://www.bing.com/search?q=example",
+    "imageUrl": "https://www.bing.com/th?id=example_1920x1080.jpg",
+    "downloadUrl": "https://www.bing.com/th?id=example_UHD.jpg"
+  },
+  "rawPayload": {
+    "images": [
+      {
+        "startdate": "20260831"
+      }
+    ]
+  },
+  "error": null,
+  "retrievedAt": "2026-09-01T00:00:00Z"
+}
