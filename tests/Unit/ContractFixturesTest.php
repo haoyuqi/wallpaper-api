@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use JsonException;
+use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
 final class ContractFixturesTest extends TestCase
 {
     /**
-     * @dataProvider fixtureProvider
-     *
      * @throws JsonException
      */
+    #[DataProvider('fixtureProvider')]
     public function test_contract_fixture_is_valid_json(string $fixture): void
     {
         $contents = file_get_contents($fixture);
@@ -26,12 +27,16 @@ final class ContractFixturesTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public function fixtureProvider(): iterable
+    public static function fixtureProvider(): iterable
     {
         $fixtures = glob(__DIR__.'/../Fixtures/Contracts/{api,composer}/*.json', GLOB_BRACE);
 
-        self::assertIsArray($fixtures);
-        self::assertCount(9, $fixtures);
+        if ($fixtures === false || count($fixtures) !== 9) {
+            throw new LogicException(sprintf(
+                'Expected exactly 9 contract fixtures, got %s',
+                $fixtures === false ? 'false' : (string) count($fixtures),
+            ));
+        }
 
         foreach ($fixtures as $fixture) {
             yield basename($fixture) => [$fixture];
