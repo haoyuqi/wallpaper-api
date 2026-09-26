@@ -80,3 +80,52 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit
+
+  postgres-test:
+    name: PostgreSQL persistence (PHP 8.4)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: wallpaper_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: postgres
+          TZ: UTC
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U wallpaper_test -d postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: testing
+      TEST_DB_CONNECTION: pgsql
+      TEST_DB_HOST: 127.0.0.1
+      TEST_DB_PORT: '5432'
+      TEST_DB_DATABASE: wallpaper_api_test
+      TEST_DB_USERNAME: wallpaper_test
+      TEST_DB_PASSWORD: ''
+      PGTZ: UTC
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          coverage: none
+          extensions: pdo_pgsql
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPUnit against an initially absent test database
+        run: vendor/bin/phpunit
+
+      - name: Verify migration rollback
+        run: php artisan migrate:rollback --force

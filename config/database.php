@@ -99,6 +99,22 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
+        ],
+
+        'testing' => [
+            'driver' => env('TEST_DB_CONNECTION', 'sqlite'),
+            'host' => env('TEST_DB_HOST', '127.0.0.1'),
+            'port' => env('TEST_DB_PORT', '5432'),
+            'database' => env('TEST_DB_DATABASE', ':memory:'),
+            'username' => env('TEST_DB_USERNAME', 'wallpaper_test'),
+            'password' => env('TEST_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+            'timezone' => 'UTC',
         ],
 
         'sqlsrv' => [
