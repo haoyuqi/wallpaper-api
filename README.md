@@ -46,7 +46,7 @@ CI runs the full suite on SQLite with PHP 8.3 and 8.4, and separately on Postgre
 
 ## Bing metadata command integration
 
-The internal gateway launches the installed `haoyuqi/download-bing-wallpaper` 3.x Artisan command as a bounded child process and validates its complete v1 JSON result. It returns metadata or a stable failure category to the upcoming ingestion service. The gateway does not write to the database or expose an HTTP endpoint. Tests exercise the installed command with an invalid date, so they make no Bing request.
+The internal gateway invokes the installed `haoyuqi/download-bing-wallpaper` 3.x command through `Artisan::call()` and validates its complete v1 JSON result and exit code. Each invocation uses a separate output buffer. It returns metadata or a stable failure category to the upcoming ingestion service, without writing to the database or exposing an HTTP endpoint. The command runs in the current PHP process; network timeouts are handled by the package, with no separate process timeout or output capture limit. Tests exercise the installed command with a fake metadata provider, so they make no Bing request.
 
 ## Architecture & Scope
 
