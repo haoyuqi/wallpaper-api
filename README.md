@@ -44,13 +44,17 @@ The default test suite uses an isolated in-memory SQLite database. To verify Pos
 
 CI runs the full suite on SQLite with PHP 8.3 and 8.4, and separately on PostgreSQL with PHP 8.4. The PostgreSQL job starts with no application database to exercise automatic creation, then verifies migration rollback.
 
+## Bing metadata command integration
+
+The internal gateway invokes the installed `haoyuqi/download-bing-wallpaper` 3.x command through `Artisan::call()` and validates its complete v1 JSON result and exit code. Each invocation uses a separate output buffer. It returns metadata or a stable failure category to the upcoming ingestion service, without writing to the database or exposing an HTTP endpoint. The command runs in the current PHP process; network timeouts are handled by the package, with no separate process timeout or output capture limit. Tests exercise the installed command with a fake metadata provider, so they make no Bing request.
+
 ## Architecture & Scope
 
 This repository provides an API-only service foundation:
 
 - No frontend views, assets, or Node/Mix/Vite runtimes are included.
 - No session or default authentication scaffolding is loaded.
-- Wallpaper persistence is present; ingestion and public query endpoints are implemented in upcoming milestones.
+- Wallpaper persistence and the internal Composer command gateway are present; ingestion and public query endpoints are implemented in upcoming milestones.
 - The frozen v1 API and ingestion contract is documented in [docs/contracts/v1.md](docs/contracts/v1.md).
 
 ## Archived Data

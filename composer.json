@@ -11,6 +11,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "haoyuqi/download-bing-wallpaper": "^3.0",
         "laravel/framework": "^13.17"
     },
     "require-dev": {
