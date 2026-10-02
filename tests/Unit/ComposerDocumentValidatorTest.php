@@ -20,6 +20,8 @@ final class ComposerDocumentValidatorTest extends TestCase
         self::assertSame($status, $result->status);
         self::assertSame($date, $result->date);
         self::assertNull($result->failureCategory);
+        self::assertSame(json_decode($this->fixture($fixture))->schemaVersion, $result->schemaVersion);
+        self::assertSame($this->fixture($fixture), $result->responseDocument);
         self::assertSame('2026-09-01T00:00:00Z', $result->retrievedAt?->format('Y-m-d\TH:i:s\Z'));
 
         if ($status === 'found') {
