@@ -71,6 +71,8 @@ final class ComposerDocumentValidator
             $rawPayload,
             $error,
             DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', $retrievedAt, new DateTimeZone('UTC')),
+            $version,
+            $output,
         );
     }
 

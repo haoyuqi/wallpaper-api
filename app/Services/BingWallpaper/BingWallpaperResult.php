@@ -20,6 +20,8 @@ final readonly class BingWallpaperResult
         public ?array $error,
         public ?DateTimeImmutable $retrievedAt,
         public ?string $failureCategory,
+        public ?string $schemaVersion,
+        public ?string $responseDocument,
     ) {}
 
     /**
@@ -33,12 +35,14 @@ final readonly class BingWallpaperResult
         mixed $rawPayload,
         ?array $error,
         DateTimeImmutable $retrievedAt,
+        string $schemaVersion,
+        string $responseDocument,
     ): self {
-        return new self($status, $date, $data, $rawPayload, $error, $retrievedAt, null);
+        return new self($status, $date, $data, $rawPayload, $error, $retrievedAt, null, $schemaVersion, $responseDocument);
     }
 
     public static function failed(string $date, string $category): self
     {
-        return new self('failure', $date, null, null, null, null, $category);
+        return new self('failure', $date, null, null, null, null, $category, null, null);
     }
 }
