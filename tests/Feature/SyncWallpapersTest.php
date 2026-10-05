@@ -11,6 +11,7 @@ use Haoyuqi\DownloadBingWallpaper\Data\MetadataResult;
 use Illuminate\Foundation\Console\ClosureCommand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
@@ -139,6 +140,7 @@ final class SyncWallpapersTest extends TestCase
 
     public function test_source_errors_are_audited_with_safe_diagnostics(): void
     {
+        Log::spy();
         $document = $this->document('error-v1.0.json');
         $document->error->message = 'sensitive diagnostic';
         $this->registerDocument($document, 1);
@@ -152,6 +154,13 @@ final class SyncWallpapersTest extends TestCase
         self::assertSame('SOURCE_ERROR', $run->error_code);
         self::assertSame('The wallpaper source returned an error.', $run->error_message);
         self::assertEquals($document, json_decode($run->response_document, false, 512, JSON_THROW_ON_ERROR));
+        Log::shouldHaveReceived('error')->once()->with('Wallpaper synchronization failed.', [
+            'source' => 'bing',
+            'market' => 'en-US',
+            'requested_date' => '2026-08-31',
+            'error_code' => 'SOURCE_ERROR',
+            'sync_run_id' => $run->id,
+        ]);
     }
 
     #[DataProvider('invalidDocuments')]
@@ -230,6 +239,7 @@ final class SyncWallpapersTest extends TestCase
 
     public function test_unavailable_audit_storage_returns_a_safe_failure(): void
     {
+        Log::spy();
         SyncRun::creating(function (): void {
             throw new RuntimeException('sensitive database details');
         });
@@ -241,6 +251,13 @@ final class SyncWallpapersTest extends TestCase
         self::assertStringNotContainsString('sensitive database details', $output);
         self::assertSame(0, Wallpaper::query()->count());
         self::assertSame(0, SyncRun::query()->count());
+        Log::shouldHaveReceived('error')->once()->with('Wallpaper synchronization failed.', [
+            'source' => 'bing',
+            'market' => 'en-US',
+            'requested_date' => '2026-08-31',
+            'error_code' => 'AUDIT_UNAVAILABLE',
+            'sync_run_id' => null,
+        ]);
     }
 
     public function test_postgresql_write_failure_rolls_back_and_records_safe_failure(): void
