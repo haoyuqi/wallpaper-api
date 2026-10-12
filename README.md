@@ -61,7 +61,11 @@ docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace \
 
 The lookup happens before the database transaction. A write failure rolls back both the wallpaper change and success audit, then records a separate `failed` attempt with a fixed, safe diagnostic. A persistence-failure audit leaves both the schema-version and response-document columns null, so a document rejected by the database cannot cause the failure audit to fail again. Malformed documents and command exceptions are audited without retaining unvalidated output. If the database cannot save even the failure audit, the command reports that the attempt could not be recorded and exits unsuccessfully.
 
-Exit codes are `0` for success or `not_found`, `1` for lookup/persistence failure, and `2` for a missing or invalid `--date`. Invalid input does not invoke the package or write an audit row because there is no valid requested calendar date. Command output includes the outcome and audit ID, never raw responses or exception details. There is no scheduling, automatic retry, image download, or Git operation.
+Exit codes are `0` for success or `not_found`, `1` for lookup/persistence failure, and `2` for a missing or invalid `--date`. Invalid input does not invoke the package or write an audit row because there is no valid requested calendar date. Command output includes the outcome and audit ID, never raw responses or exception details. Failures also emit safe structured log context correlated with the audit ID (or `AUDIT_UNAVAILABLE` if it cannot be saved). There is no automatic retry, image download, or Git operation.
+
+## Daily synchronization
+
+`wallpapers:sync-daily` runs at **12:00 UTC** and requests the previous UTC calendar date. It uses the existing manual command in-process with a persistent file-cache overlap lock on one scheduler host. Inspect it using `php artisan schedule:list`; no Bing request is made by that inspection. See [daily synchronization operations](docs/operations/daily-sync.md) for source observations, date semantics, lock requirements, failure logs and limits. Production scheduler provisioning is not included.
 
 ## Architecture & Scope
 
@@ -69,7 +73,7 @@ This repository provides an API-only service foundation:
 
 - No frontend views, assets, or Node/Mix/Vite runtimes are included.
 - No session or default authentication scaffolding is loaded.
-- Wallpaper persistence, the internal Composer command gateway, and manual synchronization are present; scheduling and public query endpoints are implemented in upcoming milestones.
+- Wallpaper persistence, the internal Composer command gateway, manual synchronization and a daily schedule are present; public query endpoints are implemented in upcoming milestones.
 - The frozen v1 API and ingestion contract is documented in [docs/contracts/v1.md](docs/contracts/v1.md).
 
 ## Archived Data

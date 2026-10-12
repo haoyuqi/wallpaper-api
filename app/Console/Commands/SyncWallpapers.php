@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Services\BingWallpaper\ComposerDocumentValidator;
 use App\Services\BingWallpaper\WallpaperSyncService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final class SyncWallpapers extends Command
@@ -28,12 +29,26 @@ final class SyncWallpapers extends Command
         try {
             $run = $service->sync($date);
         } catch (Throwable) {
+            Log::error('Wallpaper synchronization failed.', [
+                'source' => 'bing',
+                'market' => 'en-US',
+                'requested_date' => $date,
+                'error_code' => 'AUDIT_UNAVAILABLE',
+                'sync_run_id' => null,
+            ]);
             $this->error('Synchronization failed; the attempt could not be recorded.');
 
             return self::FAILURE;
         }
 
         if ($run->status === 'failed') {
+            Log::error('Wallpaper synchronization failed.', [
+                'source' => $run->source,
+                'market' => $run->market,
+                'requested_date' => $date,
+                'error_code' => $run->error_code,
+                'sync_run_id' => $run->id,
+            ]);
             $this->error("Synchronization failed ({$run->error_code}); sync run: {$run->id}.");
 
             return self::FAILURE;
