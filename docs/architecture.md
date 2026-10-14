@@ -77,8 +77,9 @@ The same formatter runs at the API middleware boundary and after exception
 rendering, covering explicit responses and exceptions with custom render methods.
 Non-API requests retain Laravel's exception behavior.
 
-The fallback constructs a JSON response directly so that error rendering does
-not need to initialize a database-backed session. Reportable API exceptions log
+The fallback constructs a response directly and the error formatter produces
+the JSON envelope without resolving Laravel's response factory or initializing
+a database-backed session. Reportable API exceptions log
 only a fixed message, error code and exception class; SQL, bindings, request
 values, exception messages and stack traces are excluded. This replaces the
 default report for those exceptions to avoid logging them twice. Laravel's
