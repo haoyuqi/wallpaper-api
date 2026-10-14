@@ -4,7 +4,7 @@ A minimal Laravel 13 API foundation providing wallpaper metadata services.
 
 ## Requirements
 
-- PHP `^8.3`
+- PHP `^8.4`
 - Laravel `^13.17`
 
 ## Development Environment
@@ -42,7 +42,9 @@ The service exposes the framework-native health check endpoint:
 
 The default test suite uses an isolated in-memory SQLite database. To verify PostgreSQL-specific behavior locally, run the same suite with `TEST_DB_CONNECTION=pgsql`, `TEST_DB_HOST`, `TEST_DB_PORT`, `TEST_DB_USERNAME`, `TEST_DB_PASSWORD`, and `TEST_DB_DATABASE=wallpaper_api_test` set in the workspace container. The PostgreSQL service and a role with database-creation permission must already exist. Laravel's `migrate:fresh` creates the missing test database automatically; subsequent runs reset its tables. The test base class refuses any PostgreSQL database name other than `wallpaper_api_test`. Never point test credentials at a shared or production server.
 
-CI runs the full suite on SQLite with PHP 8.3 and 8.4, and separately on PostgreSQL with PHP 8.4. The PostgreSQL job starts with no application database to exercise automatic creation, then verifies migration rollback.
+CI runs the full suite on SQLite and PostgreSQL with PHP 8.4. The PostgreSQL job starts with no application database to exercise automatic creation, then verifies migration rollback.
+
+Code formatting uses Pint's Laravel preset. Naming and readability conventions are documented in [code style](docs/code-style.md). Strict typing declarations are optional and are not enforced by Pint.
 
 ## Bing metadata command integration
 

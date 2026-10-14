@@ -9,7 +9,7 @@ use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
-    protected function setUpTraits()
+    protected function setUpTraits(): array
     {
         // RefreshDatabase defines its own empty beforeRefreshingDatabase hook,
         // which overrides an inherited hook. Check before any trait can migrate.

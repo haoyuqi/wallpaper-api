@@ -22,11 +22,11 @@ final class WallpaperQueryServiceTest extends TestCase
         Wallpaper::factory()->create(['source_date' => '2026-09-01']);
         $service = app(WallpaperQueryService::class);
 
-        $this->assertSame([$last->id], $service->forDate('2026-08-31')->modelKeys());
+        self::assertSame([$last->id], $service->forDate('2026-08-31')->modelKeys());
         $range = $service->between('2026-08-01', '2026-08-31');
-        $this->assertSame([$last->id, $first->id], $range->modelKeys());
-        $this->assertArrayNotHasKey('raw_payload', $range->first()->getAttributes());
-        $this->assertArrayNotHasKey('source_item_id', $range->first()->getAttributes());
+        self::assertSame([$last->id, $first->id], $range->modelKeys());
+        self::assertArrayNotHasKey('raw_payload', $range->first()->getAttributes());
+        self::assertArrayNotHasKey('source_item_id', $range->first()->getAttributes());
         $this->assertDatabaseCount('wallpapers', 3);
         $this->assertDatabaseCount('sync_runs', 0);
     }

@@ -104,7 +104,7 @@ Unit tests cover calendar rules and Composer protocol validation. Feature tests
 cover the real installed command with a fake provider, services, persistence,
 scheduling, HTTP contracts and sanitized exceptions. The test base checks the
 dedicated connection before database traits can migrate; PostgreSQL tests require
-`wallpaper_api_test`. CI covers SQLite on PHP 8.3/8.4 and PostgreSQL 18 on PHP 8.4.
+`wallpaper_api_test`. CI covers SQLite and PostgreSQL 18 on PHP 8.4.
 
 ## Extension boundaries
 

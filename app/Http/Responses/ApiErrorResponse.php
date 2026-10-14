@@ -55,7 +55,7 @@ final class ApiErrorResponse
                 : ['HTTP_ERROR', 'The request could not be completed.'],
         };
 
-        return new JsonResponse(['error' => compact('code', 'message')], $status, $headers);
+        return new JsonResponse(['error' => ['code' => $code, 'message' => $message]], $status, $headers);
     }
 
     /** @param array<string, list<string>> $messages */

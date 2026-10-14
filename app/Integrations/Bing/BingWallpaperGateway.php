@@ -12,6 +12,10 @@ use UnexpectedValueException;
 
 final class BingWallpaperGateway
 {
+    public const SOURCE = 'bing';
+
+    public const MARKET = 'en-US';
+
     public function fetch(string $date): BingWallpaperResult
     {
         if (! CalendarDate::isCanonical($date)) {

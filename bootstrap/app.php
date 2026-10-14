@@ -53,12 +53,15 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $response = $exception instanceof HttpResponseException ? $exception->getResponse() : null;
-            $status = $response?->getStatusCode() ?? match (true) {
-                $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
-                $exception instanceof AuthenticationException => 401,
-                $exception instanceof ValidationException => $exception->status,
-                default => 500,
-            };
+            $status = $response?->getStatusCode();
+            if ($status === null) {
+                $status = match (true) {
+                    $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
+                    $exception instanceof AuthenticationException => 401,
+                    $exception instanceof ValidationException => $exception->status,
+                    default => 500,
+                };
+            }
 
             // Do not resolve the response factory: it may initialize a database
             // session even when the database itself is unavailable.

@@ -13,7 +13,7 @@ final class CalendarDateTest extends TestCase
     #[DataProvider('dates')]
     public function test_only_real_canonical_calendar_dates_are_accepted(mixed $date, bool $valid): void
     {
-        $this->assertSame($valid, CalendarDate::isCanonical($date));
+        self::assertSame($valid, CalendarDate::isCanonical($date));
     }
 
     public static function dates(): array

@@ -26,7 +26,7 @@ final class WallpaperQueryService
         $this->validateDate($from);
         $this->validateDate($to);
 
-        if ($from > $to) {
+        if (strcmp($from, $to) > 0) {
             throw new InvalidArgumentException('The from date must be on or before the to date.');
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Integrations\Bing\BingWallpaperGateway;
 use App\Services\WallpaperSyncService;
 use App\Support\CalendarDate;
 use Illuminate\Console\Command;
@@ -27,11 +28,11 @@ final class SyncWallpapers extends Command
         }
 
         try {
-            $run = $service->sync($date);
+            $syncRun = $service->sync($date);
         } catch (Throwable) {
             Log::error('Wallpaper synchronization failed.', [
-                'source' => 'bing',
-                'market' => 'en-US',
+                'source' => BingWallpaperGateway::SOURCE,
+                'market' => BingWallpaperGateway::MARKET,
                 'requested_date' => $date,
                 'error_code' => 'AUDIT_UNAVAILABLE',
                 'sync_run_id' => null,
@@ -41,20 +42,20 @@ final class SyncWallpapers extends Command
             return self::FAILURE;
         }
 
-        if ($run->status === 'failed') {
+        if ($syncRun->status === 'failed') {
             Log::error('Wallpaper synchronization failed.', [
-                'source' => $run->source,
-                'market' => $run->market,
+                'source' => $syncRun->source,
+                'market' => $syncRun->market,
                 'requested_date' => $date,
-                'error_code' => $run->error_code,
-                'sync_run_id' => $run->id,
+                'error_code' => $syncRun->error_code,
+                'sync_run_id' => $syncRun->id,
             ]);
-            $this->error("Synchronization failed ({$run->error_code}); sync run: {$run->id}.");
+            $this->error("Synchronization failed ({$syncRun->error_code}); sync run: {$syncRun->id}.");
 
             return self::FAILURE;
         }
 
-        $this->info("Synchronization {$run->status}; sync run: {$run->id}.");
+        $this->info("Synchronization {$syncRun->status}; sync run: {$syncRun->id}.");
 
         return self::SUCCESS;
     }

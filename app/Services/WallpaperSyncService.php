@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Integrations\Bing\BingWallpaperGateway;
+use App\Integrations\Bing\BingWallpaperResult;
 use App\Models\SyncRun;
 use App\Models\Wallpaper;
 use App\Support\CalendarDate;
@@ -26,8 +27,8 @@ final class WallpaperSyncService
         $startedAt = CarbonImmutable::now('UTC');
         $result = $this->gateway->fetch($date);
         $attributes = [
-            'source' => 'bing',
-            'market' => 'en-US',
+            'source' => BingWallpaperGateway::SOURCE,
+            'market' => BingWallpaperGateway::MARKET,
             'requested_date' => $date,
             'schema_version' => $result->schemaVersion,
             'response_document' => $result->responseDocument,
@@ -39,8 +40,8 @@ final class WallpaperSyncService
                 if ($result->status === 'found') {
                     $data = $result->data;
                     Wallpaper::query()->upsert([
-                        'source' => 'bing',
-                        'market' => 'en-US',
+                        'source' => BingWallpaperGateway::SOURCE,
+                        'market' => BingWallpaperGateway::MARKET,
                         'source_date' => $data['sourceDate'],
                         'source_item_id' => $data['sourceItemId'],
                         'title' => $data['title'],
@@ -57,15 +58,7 @@ final class WallpaperSyncService
                     ]);
                 }
 
-                [$code, $message] = match ($result->status) {
-                    'found', 'not_found' => [null, null],
-                    'error' => ['SOURCE_ERROR', 'The wallpaper source returned an error.'],
-                    default => match ($result->failureCategory) {
-                        'command_failure' => ['COMMAND_FAILURE', 'The metadata command could not complete.'],
-                        'invalid_document' => ['INVALID_DOCUMENT', 'The metadata document did not satisfy the contract.'],
-                        default => ['INGESTION_FAILURE', 'The metadata lookup could not complete.'],
-                    },
-                };
+                [$errorCode, $errorMessage] = $this->errorDetails($result);
 
                 return SyncRun::query()->create($attributes + [
                     'status' => match ($result->status) {
@@ -73,8 +66,8 @@ final class WallpaperSyncService
                         'not_found' => 'not_found',
                         default => 'failed',
                     },
-                    'error_code' => $code,
-                    'error_message' => $message,
+                    'error_code' => $errorCode,
+                    'error_message' => $errorMessage,
                     'finished_at' => CarbonImmutable::now('UTC'),
                 ]);
             });
@@ -89,5 +82,23 @@ final class WallpaperSyncService
                 'finished_at' => CarbonImmutable::now('UTC'),
             ]));
         }
+    }
+
+    /** @return array{?string, ?string} */
+    private function errorDetails(BingWallpaperResult $result): array
+    {
+        if (in_array($result->status, ['found', 'not_found'], true)) {
+            return [null, null];
+        }
+
+        if ($result->status === 'error') {
+            return ['SOURCE_ERROR', 'The wallpaper source returned an error.'];
+        }
+
+        return match ($result->failureCategory) {
+            'command_failure' => ['COMMAND_FAILURE', 'The metadata command could not complete.'],
+            'invalid_document' => ['INVALID_DOCUMENT', 'The metadata document did not satisfy the contract.'],
+            default => ['INGESTION_FAILURE', 'The metadata lookup could not complete.'],
+        };
     }
 }

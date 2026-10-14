@@ -33,8 +33,8 @@ final class ComposerDocumentValidator
             throw new UnexpectedValueException('Invalid document root.');
         }
 
-        $version = self::field($document, 'schemaVersion');
-        if (! is_string($version) || preg_match('/^1\.[0-9]+$/D', $version) !== 1) {
+        $schemaVersion = self::field($document, 'schemaVersion');
+        if (! is_string($schemaVersion) || preg_match('/^1\.[0-9]+$/D', $schemaVersion) !== 1) {
             throw new UnexpectedValueException('Unsupported schema version.');
         }
 
@@ -46,8 +46,8 @@ final class ComposerDocumentValidator
         $retrievedAt = self::field($document, 'retrievedAt');
 
         if (! $query instanceof stdClass
-            || self::field($query, 'source') !== 'bing'
-            || self::field($query, 'market') !== 'en-US'
+            || self::field($query, 'source') !== BingWallpaperGateway::SOURCE
+            || self::field($query, 'market') !== BingWallpaperGateway::MARKET
             || self::field($query, 'date') !== $requestedDate
             || ! is_string($retrievedAt)
             || ! self::isUtcTimestamp($retrievedAt)) {
@@ -55,11 +55,11 @@ final class ComposerDocumentValidator
         }
 
         if ($status === 'found' && $exitCode === 0 && $error === null && $data instanceof stdClass) {
-            $normalized = self::wallpaperData($data, $requestedDate);
+            $normalizedData = self::wallpaperData($data, $requestedDate);
         } elseif ($status === 'not_found' && $exitCode === 0 && $data === null && $error === null) {
-            $normalized = null;
+            $normalizedData = null;
         } elseif ($status === 'error' && in_array($exitCode, [1, 2], true) && $data === null && $error instanceof stdClass) {
-            $normalized = null;
+            $normalizedData = null;
             $error = self::technicalError($error);
         } else {
             throw new UnexpectedValueException('Invalid status and exit code combination.');
@@ -68,11 +68,11 @@ final class ComposerDocumentValidator
         return BingWallpaperResult::accepted(
             $status,
             $requestedDate,
-            $normalized,
+            $normalizedData,
             $rawPayload,
             $error,
             DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', $retrievedAt, new DateTimeZone('UTC')),
-            $version,
+            $schemaVersion,
             $output,
         );
     }
@@ -113,7 +113,15 @@ final class ComposerDocumentValidator
             throw new UnexpectedValueException('Invalid wallpaper data.');
         }
 
-        return compact('sourceDate', 'sourceItemId', 'title', 'copyright', 'copyrightLink', 'imageUrl', 'downloadUrl');
+        return [
+            'sourceDate' => $sourceDate,
+            'sourceItemId' => $sourceItemId,
+            'title' => $title,
+            'copyright' => $copyright,
+            'copyrightLink' => $copyrightLink,
+            'imageUrl' => $imageUrl,
+            'downloadUrl' => $downloadUrl,
+        ];
     }
 
     /** @return array{code: string, message: string, retryable: bool} */
@@ -127,7 +135,11 @@ final class ComposerDocumentValidator
             throw new UnexpectedValueException('Invalid technical error.');
         }
 
-        return compact('code', 'message', 'retryable');
+        return [
+            'code' => $code,
+            'message' => $message,
+            'retryable' => $retryable,
+        ];
     }
 
     private static function field(stdClass $object, string $name): mixed
