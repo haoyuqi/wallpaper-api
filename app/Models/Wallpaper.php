@@ -47,4 +47,11 @@ class Wallpaper extends Model
             set: fn (DateTimeInterface|string $value): string => CarbonImmutable::parse($value)->utc()->format('Y-m-d H:i:s'),
         );
     }
+
+    protected function sourceDate(): Attribute
+    {
+        return Attribute::make(
+            set: fn (DateTimeInterface|string $value): string => CarbonImmutable::parse($value)->format('Y-m-d'),
+        );
+    }
 }
