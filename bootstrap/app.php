@@ -64,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // session even when the database itself is unavailable.
             $headers = $exception instanceof HttpExceptionInterface ? $exception->getHeaders() : [];
 
-            return ApiErrorResponse::normalize($response ?? new Response('', $status, $headers));
+            return $response ?? new Response('', $status, $headers);
         });
 
         // Also sanitize exceptions that supply their own render() response.
