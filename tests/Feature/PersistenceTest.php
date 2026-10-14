@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\SyncRun;
 use App\Models\Wallpaper;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,16 @@ use Tests\TestCase;
 class PersistenceTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_calendar_dates_are_stored_without_time_or_timezone_conversion(): void
+    {
+        $date = CarbonImmutable::parse('2026-08-31 00:30:00', 'Pacific/Auckland');
+        $wallpaper = Wallpaper::factory()->create(['source_date' => $date]);
+        $run = SyncRun::factory()->create(['requested_date' => $date]);
+
+        $this->assertSame('2026-08-31', DB::table('wallpapers')->where('id', $wallpaper->id)->value('source_date'));
+        $this->assertSame('2026-08-31', DB::table('sync_runs')->where('id', $run->id)->value('requested_date'));
+    }
 
     public function test_wallpaper_factory_persists_metadata_and_raw_json_types(): void
     {

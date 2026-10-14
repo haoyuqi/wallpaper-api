@@ -87,6 +87,10 @@ This repository provides an API-only service foundation:
 - Wallpaper persistence, the internal Composer command gateway, manual synchronization, a daily schedule and public date queries are present. Authentication, tags, keyword search and pagination are outside v1.
 - The frozen v1 API and ingestion contract is documented in [docs/contracts/v1.md](docs/contracts/v1.md).
 
+Requests validate input, controllers call application services, and resources define public output. Services own queries and synchronization transactions; `Integrations/Bing` owns the Composer command protocol, while models handle persistence and `Support/CalendarDate` supplies shared date validation. See [application architecture](docs/architecture.md) for responsibilities and extension boundaries.
+
+API exceptions return safe JSON independently of debug mode. Unexpected failures use HTTP 500 with `INTERNAL_ERROR`; known HTTP errors preserve their status and required headers. Reportable API errors log a fixed message and exception class without SQL, bindings or raw exception details. Production must still set `APP_DEBUG=false`. File cache and synchronous queue defaults require no cache or job tables.
+
 ## Archived Data
 
 The 321 historical daily wallpaper images under `storage/bing-wallpaper/` remain archived in this repository for historical preservation but are not accessed or modified by the application runtime.

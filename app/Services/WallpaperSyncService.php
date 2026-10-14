@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BingWallpaper;
+namespace App\Services;
 
+use App\Integrations\Bing\BingWallpaperGateway;
 use App\Models\SyncRun;
 use App\Models\Wallpaper;
+use App\Support\CalendarDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -17,7 +19,7 @@ final class WallpaperSyncService
 
     public function sync(string $date): SyncRun
     {
-        if (! ComposerDocumentValidator::isCanonicalDate($date)) {
+        if (! CalendarDate::isCanonical($date)) {
             throw new InvalidArgumentException('A real date in YYYY-MM-DD format is required.');
         }
 

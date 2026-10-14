@@ -49,6 +49,13 @@ class SyncRun extends Model
         );
     }
 
+    protected function requestedDate(): Attribute
+    {
+        return Attribute::make(
+            set: fn (DateTimeInterface|string $value): string => CarbonImmutable::parse($value)->format('Y-m-d'),
+        );
+    }
+
     protected function finishedAt(): Attribute
     {
         return Attribute::make(

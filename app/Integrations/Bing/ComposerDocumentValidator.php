@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BingWallpaper;
+namespace App\Integrations\Bing;
 
+use App\Support\CalendarDate;
 use DateTimeImmutable;
 use DateTimeZone;
 use JsonException;
@@ -14,7 +15,7 @@ final class ComposerDocumentValidator
 {
     public function validate(string $output, int $exitCode, string $requestedDate): BingWallpaperResult
     {
-        if (! self::isCanonicalDate($requestedDate)) {
+        if (! CalendarDate::isCanonical($requestedDate)) {
             throw new UnexpectedValueException('Invalid requested date.');
         }
 
@@ -76,17 +77,6 @@ final class ComposerDocumentValidator
         );
     }
 
-    public static function isCanonicalDate(string $date): bool
-    {
-        if (preg_match('/^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $date) !== 1) {
-            return false;
-        }
-
-        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date, new DateTimeZone('UTC'));
-
-        return $parsed !== false && $parsed->format('Y-m-d') === $date;
-    }
-
     private static function isUtcTimestamp(string $value): bool
     {
         if (preg_match('/^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/D', $value) !== 1) {
@@ -112,7 +102,7 @@ final class ComposerDocumentValidator
         $downloadUrl = self::field($data, 'downloadUrl');
 
         if (! is_string($sourceDate)
-            || ! self::isCanonicalDate($sourceDate)
+            || ! CalendarDate::isCanonical($sourceDate)
             || $sourceDate !== $requestedDate
             || ! self::isNonEmptyString($sourceItemId)
             || ! self::isNullableString($title)

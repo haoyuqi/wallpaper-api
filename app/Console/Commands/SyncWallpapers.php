@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Services\BingWallpaper\ComposerDocumentValidator;
-use App\Services\BingWallpaper\WallpaperSyncService;
+use App\Services\WallpaperSyncService;
+use App\Support\CalendarDate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -20,7 +20,7 @@ final class SyncWallpapers extends Command
     {
         $date = $this->option('date');
 
-        if (! is_string($date) || ! ComposerDocumentValidator::isCanonicalDate($date)) {
+        if (! CalendarDate::isCanonical($date)) {
             $this->error('The --date option must be a real date in YYYY-MM-DD format.');
 
             return self::INVALID;
