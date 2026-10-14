@@ -14,7 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Calendar-date query values must be canonical, not silently trimmed.
+        $middleware->trimStrings(except: [
+            fn (Request $request): bool => $request->is('api/v1/wallpapers'),
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

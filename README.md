@@ -67,13 +67,24 @@ Exit codes are `0` for success or `not_found`, `1` for lookup/persistence failur
 
 `wallpapers:sync-daily` runs at **12:00 UTC** and requests the previous UTC calendar date. It uses the existing manual command in-process with a persistent file-cache overlap lock on one scheduler host. Inspect it using `php artisan schedule:list`; no Bing request is made by that inspection. See [daily synchronization operations](docs/operations/daily-sync.md) for source observations, date semantics, lock requirements, failure logs and limits. Production scheduler provisioning is not included.
 
+## Query wallpaper metadata
+
+The public, read-only endpoint needs no authentication:
+
+```http
+GET /api/v1/wallpapers?date=2026-08-31
+GET /api/v1/wallpapers?from=2026-08-01&to=2026-08-31
+```
+
+Supply either `date` or both `from` and `to` as real `YYYY-MM-DD` calendar dates. Ranges include both endpoints, with no range cap or pagination. Results are ordered by source date descending, then ID descending; only public metadata is returned. Valid requests return HTTP 200, including an empty `data` array. Invalid modes or dates return HTTP 422 with stable error codes. The response includes `meta.query` and `meta.count`; see the [v1 contract](docs/contracts/v1.md) for exact fields and validation precedence. Parameters come from the URL query only; other parameters are ignored and do not enable filters. No Bing lookup or database write occurs during a query.
+
 ## Architecture & Scope
 
 This repository provides an API-only service foundation:
 
 - No frontend views, assets, or Node/Mix/Vite runtimes are included.
 - No session or default authentication scaffolding is loaded.
-- Wallpaper persistence, the internal Composer command gateway, manual synchronization and a daily schedule are present; public query endpoints are implemented in upcoming milestones.
+- Wallpaper persistence, the internal Composer command gateway, manual synchronization, a daily schedule and public date queries are present. Authentication, tags, keyword search and pagination are outside v1.
 - The frozen v1 API and ingestion contract is documented in [docs/contracts/v1.md](docs/contracts/v1.md).
 
 ## Archived Data
