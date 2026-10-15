@@ -18,6 +18,7 @@ in issues, PRs or the private Project.
 | Daily scheduling and overlap prevention | [routes/console.php](../routes/console.php), [daily synchronization](operations/daily-sync.md) | [WallpaperScheduleTest](../tests/Feature/WallpaperScheduleTest.php) |
 | Tables, calendar dates and UTC instants | [Migrations](../database/migrations), [Wallpaper](../app/Models/Wallpaper.php), [SyncRun](../app/Models/SyncRun.php) | [PersistenceTest](../tests/Feature/PersistenceTest.php) |
 | Safe errors and logs | [bootstrap/app.php](../bootstrap/app.php), [NormalizeApiErrors](../app/Http/Middleware/NormalizeApiErrors.php), [ApiErrorResponse](../app/Http/Responses/ApiErrorResponse.php) | [ApiExceptionTest](../tests/Feature/ApiExceptionTest.php) |
+| CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [public API controls](operations/public-api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
@@ -121,6 +122,11 @@ from allowlisted public fields and codes, never arbitrary supplied messages.
 The same formatter runs at the API middleware boundary and after exception
 rendering, covering explicit responses and exceptions with custom render methods.
 Non-API requests retain Laravel's exception behavior.
+
+Public reads use the framework CORS middleware and a named per-IP rate limiter.
+Both query modes share the budget; preflight requests bypass it. See
+[public API controls](operations/public-api.md) for environment settings, cache
+and proxy assumptions, safe 429 responses and broad-query resource limitations.
 
 The fallback constructs a response directly and the error formatter produces
 the JSON envelope without resolving Laravel's response factory or initializing
