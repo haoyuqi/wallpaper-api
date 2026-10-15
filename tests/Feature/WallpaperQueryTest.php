@@ -27,7 +27,7 @@ final class WallpaperQueryTest extends TestCase
         $this->getJson('/api/v1/wallpapers?date=2026-08-31')
             ->assertOk()->assertExactJson($fixture);
 
-        $this->assertSame($before, DB::table('wallpapers')->orderBy('id')->get()->toJson());
+        self::assertSame($before, DB::table('wallpapers')->orderBy('id')->get()->toJson());
         $this->assertDatabaseCount('sync_runs', 1);
     }
 
@@ -111,9 +111,9 @@ final class WallpaperQueryTest extends TestCase
         foreach (['2026-08-31', CarbonImmutable::parse('2026-08-31T00:30:00+14:00')] as $value) {
             $wallpaper = Wallpaper::factory()->create(['source_date' => $value]);
 
-            $this->assertSame('2026-08-31', DB::table('wallpapers')->where('id', $wallpaper->id)->value('source_date'));
-            $this->assertInstanceOf(CarbonImmutable::class, $wallpaper->fresh()->source_date);
-            $this->assertSame('2026-08-31', $wallpaper->fresh()->source_date->toDateString());
+            self::assertSame('2026-08-31', DB::table('wallpapers')->where('id', $wallpaper->id)->value('source_date'));
+            self::assertInstanceOf(CarbonImmutable::class, $wallpaper->fresh()->source_date);
+            self::assertSame('2026-08-31', $wallpaper->fresh()->source_date->toDateString());
         }
 
         $this->getJson('/api/v1/wallpapers?date=2026-08-31')->assertOk()->assertJsonPath('meta.count', 2);

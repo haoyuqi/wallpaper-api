@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BingWallpaper;
+namespace App\Integrations\Bing;
 
+use App\Support\CalendarDate;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Throwable;
@@ -11,9 +12,13 @@ use UnexpectedValueException;
 
 final class BingWallpaperGateway
 {
+    public const SOURCE = 'bing';
+
+    public const MARKET = 'en-US';
+
     public function fetch(string $date): BingWallpaperResult
     {
-        if (! ComposerDocumentValidator::isCanonicalDate($date)) {
+        if (! CalendarDate::isCanonical($date)) {
             return BingWallpaperResult::failed($date, 'invalid_date');
         }
 

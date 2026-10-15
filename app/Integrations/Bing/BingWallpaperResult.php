@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BingWallpaper;
+namespace App\Integrations\Bing;
 
 use DateTimeImmutable;
 

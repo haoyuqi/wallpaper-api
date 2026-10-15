@@ -39,7 +39,14 @@ php artisan schedule:list
 ```
 
 Use **one scheduler host**. Its eventual deployment must invoke Laravel's
-`schedule:run` once per minute; provisioning that trigger is outside this issue.
+`schedule:run` once per minute. For example, configure a cron entry with the
+deployment's PHP executable and application path:
+
+```cron
+* * * * * cd /path/to/wallpaper-api && php artisan schedule:run >> /dev/null 2>&1
+```
+
+If PHP runs in a container, invoke the equivalent command in that container.
 The scheduler explicitly uses the existing `file` cache store for its mutex,
 independently of the application's default cache. No cache tables are required.
 `storage/framework/cache/data` must be writable and persist/shared between

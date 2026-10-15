@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Services\BingWallpaper\BingWallpaperGateway;
+use App\Integrations\Bing\BingWallpaperGateway;
 use Haoyuqi\DownloadBingWallpaper\Contracts\WallpaperMetadataProvider;
 use Haoyuqi\DownloadBingWallpaper\Data\MetadataResult;
 use Illuminate\Foundation\Console\ClosureCommand;

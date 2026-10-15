@@ -1,92 +1,115 @@
 # Wallpaper API
 
-A minimal Laravel 13 API foundation providing wallpaper metadata services.
+[English](README.md) | [简体中文](README.zh-CN.md)
+
+A Laravel 13 API for collecting Bing wallpaper metadata and querying it by date.
+It stores metadata and source JSON; synchronization does not download images.
 
 ## Requirements
 
-- PHP `^8.3`
-- Laravel `^13.17`
+- PHP 8.4 or later within the PHP 8.x series
+- Composer 2
+- PDO SQLite for the default local setup, or PDO PostgreSQL for PostgreSQL
+- PostgreSQL 18 is tested in CI; SQLite is also supported
 
-## Development Environment
+Use a local PHP installation or a container environment of your choice. Run
+the commands below from the repository root in that environment.
 
-All PHP and Composer operations are run inside the Laradock workspace container. No host PHP or Composer installation is required or supported.
-
-From the Laradock directory (`~/Developer/laradock`):
-
-```bash
-docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace <command>
-```
-
-Example development commands:
+## Getting started
 
 ```bash
-# Validate Composer configuration
-docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace composer validate --strict
-
-# Run code style checks
-docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace vendor/bin/pint --test
-
-# Run test suite
-docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace php artisan test
+git clone https://github.com/haoyuqi/wallpaper-api.git
+cd wallpaper-api
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan serve
 ```
 
-## Health Check
+The example configuration uses SQLite. For PostgreSQL, configure the database
+connection in your local `.env` and create the application database before
+running migrations. Keep credentials out of version control.
 
-The service exposes the framework-native health check endpoint:
+The local server defaults to `http://127.0.0.1:8000`. Check `GET /up` to confirm
+the application boots. Do not use `artisan serve` as a production web server.
 
-- `GET /up`: Returns HTTP 200 when the application boots successfully.
-
-## Persistence and tests
-
-`wallpapers` stores normalized metadata plus its original JSON payload; `sync_runs` audits each synchronization attempt. Both tables contain metadata only, never image binaries. Dates are calendar `DATE` values. Event timestamps are stored as UTC instants; PostgreSQL uses `JSONB` for the raw documents.
-
-The default test suite uses an isolated in-memory SQLite database. To verify PostgreSQL-specific behavior locally, run the same suite with `TEST_DB_CONNECTION=pgsql`, `TEST_DB_HOST`, `TEST_DB_PORT`, `TEST_DB_USERNAME`, `TEST_DB_PASSWORD`, and `TEST_DB_DATABASE=wallpaper_api_test` set in the workspace container. The PostgreSQL service and a role with database-creation permission must already exist. Laravel's `migrate:fresh` creates the missing test database automatically; subsequent runs reset its tables. The test base class refuses any PostgreSQL database name other than `wallpaper_api_test`. Never point test credentials at a shared or production server.
-
-CI runs the full suite on SQLite with PHP 8.3 and 8.4, and separately on PostgreSQL with PHP 8.4. The PostgreSQL job starts with no application database to exercise automatic creation, then verifies migration rollback.
-
-## Bing metadata command integration
-
-The internal gateway invokes the installed `haoyuqi/download-bing-wallpaper` 3.x command through `Artisan::call()` and validates its complete v1 JSON result and exit code. Each invocation uses a separate output buffer. It returns metadata or a stable failure category to the ingestion service, without writing to the database or exposing an HTTP endpoint. The command runs in the current PHP process; network timeouts are handled by the package, with no separate process timeout or output capture limit. Tests exercise the installed command with a fake metadata provider, so they make no Bing request.
-
-## Synchronize a date
-
-Configure the application database and run `php artisan migrate` before synchronizing. From the Laradock directory:
+## Synchronize metadata
 
 ```bash
-docker compose exec -T -u laradock -w /var/www/wallpaper-api workspace \
-  php artisan wallpapers:sync --date=2026-09-29
+php artisan wallpapers:sync --date=2026-10-01
 ```
 
-`wallpapers:sync` calls the gateway once and stores metadata only. Found results are atomically upserted by `(source, market, source_date, source_item_id)` with a successful `sync_runs` record. Repeating a date updates the matching record without changing its ID or creating a duplicate; each attempt receives a separate audit record. `not_found` records the lookup without inserting or deleting wallpaper data. Validated response documents, their schema versions, and original JSON value types are retained internally.
+The command invokes the installed
+[download-bing-wallpaper](https://github.com/haoyuqi/download-bing-wallpaper)
+3.x Artisan command and validates its JSON response. Repeated successful
+lookups update the same source identity; every lookup records a synchronization
+attempt. Bing may not have data for a requested date.
 
-The lookup happens before the database transaction. A write failure rolls back both the wallpaper change and success audit, then records a separate `failed` attempt with a fixed, safe diagnostic. A persistence-failure audit leaves both the schema-version and response-document columns null, so a document rejected by the database cannot cause the failure audit to fail again. Malformed documents and command exceptions are audited without retaining unvalidated output. If the database cannot save even the failure audit, the command reports that the attempt could not be recorded and exits unsuccessfully.
+Exit codes are `0` for success or `not_found`, `1` for source or persistence
+failure, and `2` for missing or invalid dates. Output includes the outcome and
+audit ID, without raw documents or exception details.
 
-Exit codes are `0` for success or `not_found`, `1` for lookup/persistence failure, and `2` for a missing or invalid `--date`. Invalid input does not invoke the package or write an audit row because there is no valid requested calendar date. Command output includes the outcome and audit ID, never raw responses or exception details. Failures also emit safe structured log context correlated with the audit ID (or `AUDIT_UNAVAILABLE` if it cannot be saved). There is no automatic retry, image download, or Git operation.
+## Query metadata
+
+```http
+GET /api/v1/wallpapers?date=2026-10-01
+GET /api/v1/wallpapers?from=2026-10-01&to=2026-10-07
+```
+
+Supply either `date` or both `from` and `to`, in real `YYYY-MM-DD` calendar-date
+format. Ranges include both endpoints. Results are ordered by source date and
+ID descending and contain only public metadata.
+
+Valid queries return HTTP 200, including empty results. Invalid parameters
+return HTTP 422 with stable error codes. Queries read stored data and do not
+contact Bing. See the [v1 contract](docs/contracts/v1.md) for fields and examples.
+
+Version 1 has no authentication, tags, keyword filters or pagination. Large
+ranges can return large responses; choose an appropriate range for your client.
 
 ## Daily synchronization
 
-`wallpapers:sync-daily` runs at **12:00 UTC** and requests the previous UTC calendar date. It uses the existing manual command in-process with a persistent file-cache overlap lock on one scheduler host. Inspect it using `php artisan schedule:list`; no Bing request is made by that inspection. See [daily synchronization operations](docs/operations/daily-sync.md) for source observations, date semantics, lock requirements, failure logs and limits. Production scheduler provisioning is not included.
+The registered task runs at 12:00 UTC and requests the previous UTC date.
+Deployments must invoke Laravel's `schedule:run` once per minute on one
+scheduler host. Its file-cache lock requires writable, persistent storage.
 
-## Query wallpaper metadata
-
-The public, read-only endpoint needs no authentication:
-
-```http
-GET /api/v1/wallpapers?date=2026-08-31
-GET /api/v1/wallpapers?from=2026-08-01&to=2026-08-31
+```bash
+php artisan schedule:list
 ```
 
-Supply either `date` or both `from` and `to` as real `YYYY-MM-DD` calendar dates. Ranges include both endpoints, with no range cap or pagination. Results are ordered by source date descending, then ID descending; only public metadata is returned. Valid requests return HTTP 200, including an empty `data` array. Invalid modes or dates return HTTP 422 with stable error codes. The response includes `meta.query` and `meta.count`; see the [v1 contract](docs/contracts/v1.md) for exact fields and validation precedence. Parameters come from the URL query only; other parameters are ignored and do not enable filters. No Bing lookup or database write occurs during a query.
+See [daily synchronization](docs/operations/daily-sync.md) for scheduler
+configuration, locks, failure logs and recovery.
 
-## Architecture & Scope
+## Tests and code style
 
-This repository provides an API-only service foundation:
+```bash
+composer validate --strict
+vendor/bin/pint --test
+vendor/bin/phpunit
+```
 
-- No frontend views, assets, or Node/Mix/Vite runtimes are included.
-- No session or default authentication scaffolding is loaded.
-- Wallpaper persistence, the internal Composer command gateway, manual synchronization, a daily schedule and public date queries are present. Authentication, tags, keyword search and pagination are outside v1.
-- The frozen v1 API and ingestion contract is documented in [docs/contracts/v1.md](docs/contracts/v1.md).
+The default test suite uses isolated in-memory SQLite. PostgreSQL-specific tests
+are skipped in that mode. CI runs the suite with both SQLite and PostgreSQL 18
+on PHP 8.4. See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
+and [code style](docs/code-style.md) for naming and readability conventions.
+Pint uses the Laravel preset and does not enforce strict typing declarations.
 
-## Archived Data
+## Documentation and support
 
-The 321 historical daily wallpaper images under `storage/bing-wallpaper/` remain archived in this repository for historical preservation but are not accessed or modified by the application runtime.
+- [Architecture](docs/architecture.md): responsibilities, data flows and extension boundaries
+- [API and Composer contract](docs/contracts/v1.md): inputs, responses and compatibility
+- [Daily synchronization](docs/operations/daily-sync.md): operation and troubleshooting
+- [Code style](docs/code-style.md): contribution conventions
+- [Issues](https://github.com/haoyuqi/wallpaper-api/issues): bug reports, questions and proposals
+- [Contributing](CONTRIBUTING.md): development setup and pull requests
+
+## License and archived images
+
+Project code is licensed under the [MIT license](LICENSE). Third-party images
+and source content retain their respective rights; the code license does not
+grant rights to them.
+
+Historical wallpaper images under `storage/bing-wallpaper/` are retained as an
+archive. The API runtime does not read or modify that archive.

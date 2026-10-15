@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Http\Responses\ApiErrorResponse;
+use App\Support\CalendarDate;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class WallpaperQueryRequest extends FormRequest
 {
-    private const MESSAGES = [
-        'QUERY_MODE_REQUIRED' => 'Supply either date or both from and to.',
-        'QUERY_MODE_CONFLICT' => 'Use either date or from/to, not both.',
-        'RANGE_ENDPOINT_REQUIRED' => 'Both from and to are required for a date range.',
-        'INVALID_DATE' => 'The date must be a real calendar date in YYYY-MM-DD format.',
-        'RANGE_ORDER_INVALID' => 'The from date must be on or before the to date.',
-    ];
-
     public function authorize(): bool
     {
         return true;
@@ -61,7 +55,7 @@ final class WallpaperQueryRequest extends FormRequest
             }
 
             foreach ($hasDate ? ['date'] : ['from', 'to'] as $field) {
-                if (! $this->isCanonicalDate($query[$field])) {
+                if (! CalendarDate::isCanonical($query[$field])) {
                     $validator->errors()->add($field, 'INVALID_DATE');
                 }
             }
@@ -74,28 +68,6 @@ final class WallpaperQueryRequest extends FormRequest
 
     protected function failedValidation(Validator $validator): void
     {
-        $details = [];
-        foreach ($validator->errors()->messages() as $field => $codes) {
-            foreach ($codes as $code) {
-                $details[] = ['field' => $field, 'code' => $code, 'message' => self::MESSAGES[$code]];
-            }
-        }
-
-        throw new HttpResponseException(response()->json([
-            'error' => [
-                'code' => 'VALIDATION_ERROR',
-                'message' => 'The request parameters are invalid.',
-                'details' => $details,
-            ],
-        ], 422));
-    }
-
-    private function isCanonicalDate(mixed $date): bool
-    {
-        if (! is_string($date) || preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/D', $date, $parts) !== 1) {
-            return false;
-        }
-
-        return checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]);
+        throw new HttpResponseException(ApiErrorResponse::validation($validator->errors()->messages()));
     }
 }

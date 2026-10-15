@@ -6,15 +6,26 @@ namespace Tests\Feature;
 
 use App\Models\SyncRun;
 use App\Models\Wallpaper;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-class PersistenceTest extends TestCase
+final class PersistenceTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_calendar_dates_are_stored_without_time_or_timezone_conversion(): void
+    {
+        $date = CarbonImmutable::parse('2026-08-31 00:30:00', 'Pacific/Auckland');
+        $wallpaper = Wallpaper::factory()->create(['source_date' => $date]);
+        $run = SyncRun::factory()->create(['requested_date' => $date]);
+
+        self::assertSame('2026-08-31', DB::table('wallpapers')->where('id', $wallpaper->id)->value('source_date'));
+        self::assertSame('2026-08-31', DB::table('sync_runs')->where('id', $run->id)->value('requested_date'));
+    }
 
     public function test_wallpaper_factory_persists_metadata_and_raw_json_types(): void
     {
@@ -24,9 +35,9 @@ class PersistenceTest extends TestCase
                 'raw_payload' => $payload,
             ]);
 
-            $this->assertTrue(Str::isUlid($wallpaper->id));
-            $this->assertSame('2026-08-31', $wallpaper->fresh()->source_date->toDateString());
-            $this->assertEquals(json_decode($payload, false, 512, JSON_THROW_ON_ERROR), json_decode($wallpaper->fresh()->raw_payload, false, 512, JSON_THROW_ON_ERROR));
+            self::assertTrue(Str::isUlid($wallpaper->id));
+            self::assertSame('2026-08-31', $wallpaper->fresh()->source_date->toDateString());
+            self::assertEquals(json_decode($payload, false, 512, JSON_THROW_ON_ERROR), json_decode($wallpaper->fresh()->raw_payload, false, 512, JSON_THROW_ON_ERROR));
         }
     }
 
@@ -63,12 +74,12 @@ class PersistenceTest extends TestCase
             'error_message' => 'Synthetic failure',
         ]);
 
-        $this->assertTrue(Str::isUlid($missing->id));
-        $this->assertSame('2026-08-31', $jsonNull->fresh()->requested_date->toDateString());
-        $this->assertNull($missing->fresh()->response_document);
-        $this->assertSame('null', $jsonNull->fresh()->response_document);
-        $this->assertNull($missing->fresh()->finished_at);
-        $this->assertSame(2, SyncRun::query()->count());
+        self::assertTrue(Str::isUlid($missing->id));
+        self::assertSame('2026-08-31', $jsonNull->fresh()->requested_date->toDateString());
+        self::assertNull($missing->fresh()->response_document);
+        self::assertSame('null', $jsonNull->fresh()->response_document);
+        self::assertNull($missing->fresh()->finished_at);
+        self::assertSame(2, SyncRun::query()->count());
     }
 
     public function test_non_utc_event_times_are_stored_as_utc_instants(): void
@@ -81,9 +92,9 @@ class PersistenceTest extends TestCase
             'finished_at' => '2026-08-31T17:15:00+08:00',
         ]);
 
-        $this->assertSame('2026-08-31T08:15:00.000000Z', $wallpaper->fresh()->retrieved_at->toISOString());
-        $this->assertSame('2026-08-31T08:15:00.000000Z', $run->fresh()->started_at->toISOString());
-        $this->assertSame('2026-08-31T09:15:00.000000Z', $run->fresh()->finished_at->toISOString());
+        self::assertSame('2026-08-31T08:15:00.000000Z', $wallpaper->fresh()->retrieved_at->toISOString());
+        self::assertSame('2026-08-31T08:15:00.000000Z', $run->fresh()->started_at->toISOString());
+        self::assertSame('2026-08-31T09:15:00.000000Z', $run->fresh()->finished_at->toISOString());
     }
 
     public function test_postgresql_schema_and_session_semantics(): void
@@ -92,7 +103,7 @@ class PersistenceTest extends TestCase
             $this->markTestSkipped('PostgreSQL-only JSONB, timestamptz, and catalog assertions.');
         }
 
-        $this->assertSame('UTC', DB::selectOne("SELECT current_setting('TimeZone') AS timezone")->timezone);
+        self::assertSame('UTC', DB::selectOne("SELECT current_setting('TimeZone') AS timezone")->timezone);
 
         $columns = collect(DB::select("SELECT table_name, column_name, data_type, udt_name, is_nullable
             FROM information_schema.columns
@@ -100,31 +111,31 @@ class PersistenceTest extends TestCase
             ->keyBy(fn (object $column): string => $column->table_name.'.'.$column->column_name);
 
         foreach (['wallpapers.source_date', 'sync_runs.requested_date'] as $key) {
-            $this->assertSame('date', $columns[$key]->data_type);
+            self::assertSame('date', $columns[$key]->data_type);
         }
 
         foreach (['wallpapers.retrieved_at', 'wallpapers.created_at', 'wallpapers.updated_at', 'sync_runs.started_at', 'sync_runs.finished_at'] as $key) {
-            $this->assertSame('timestamp with time zone', $columns[$key]->data_type);
+            self::assertSame('timestamp with time zone', $columns[$key]->data_type);
         }
 
         foreach (['wallpapers.raw_payload', 'sync_runs.response_document'] as $key) {
-            $this->assertSame('jsonb', $columns[$key]->udt_name);
+            self::assertSame('jsonb', $columns[$key]->udt_name);
         }
 
-        $this->assertSame('NO', $columns['wallpapers.raw_payload']->is_nullable);
-        $this->assertSame('YES', $columns['sync_runs.response_document']->is_nullable);
-        $this->assertFalse($columns->has('sync_runs.created_at'));
+        self::assertSame('NO', $columns['wallpapers.raw_payload']->is_nullable);
+        self::assertSame('YES', $columns['sync_runs.response_document']->is_nullable);
+        self::assertFalse($columns->has('sync_runs.created_at'));
 
         $indexes = collect(DB::select("SELECT indexname FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'wallpapers'"))
             ->pluck('indexname');
-        $this->assertContains('wallpapers_source_identity_unique', $indexes);
-        $this->assertContains('wallpapers_source_date_index', $indexes);
-        $this->assertContains('wallpapers_source_source_date_index', $indexes);
+        self::assertContains('wallpapers_source_identity_unique', $indexes);
+        self::assertContains('wallpapers_source_date_index', $indexes);
+        self::assertContains('wallpapers_source_source_date_index', $indexes);
 
         $wallpaper = Wallpaper::factory()->create(['raw_payload' => '{}']);
-        $this->assertSame('object', DB::table('wallpapers')->where('id', $wallpaper->id)->selectRaw('jsonb_typeof(raw_payload) AS json_type')->first()->json_type);
+        self::assertSame('object', DB::table('wallpapers')->where('id', $wallpaper->id)->selectRaw('jsonb_typeof(raw_payload) AS json_type')->first()->json_type);
 
         $run = SyncRun::factory()->create(['response_document' => 'null']);
-        $this->assertSame('null', DB::table('sync_runs')->where('id', $run->id)->selectRaw('jsonb_typeof(response_document) AS json_type')->first()->json_type);
+        self::assertSame('null', DB::table('sync_runs')->where('id', $run->id)->selectRaw('jsonb_typeof(response_document) AS json_type')->first()->json_type);
     }
 }
