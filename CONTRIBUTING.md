@@ -4,12 +4,37 @@ Bug reports, documentation improvements and focused pull requests are welcome.
 Search existing issues before opening a new one. Discuss changes to the public
 contract or major features before implementing them.
 
+## Documentation map
+
+| Topic | Reference |
+| --- | --- |
+| Installation, runtime requirements and commands | [README](README.md#getting-started) |
+| Feature implementations and tests | [Architecture and feature map](docs/architecture.md) |
+| Naming, types and readability | [Code style](docs/code-style.md) |
+| HTTP and Composer protocols | [v1 contract](docs/contracts/v1.md) |
+| Scheduling, locks, logs and recovery | [Daily synchronization](docs/operations/daily-sync.md) |
+| Reading order for coding agents | [AGENTS.md](AGENTS.md) |
+
+## Change requirements
+
+| Rule | Evidence to check |
+| --- | --- |
+| Keep changes focused | Each behavior change serves the stated goal; unrelated refactoring is separate. |
+| Trace the complete path | Inspect entry points, callers, data changes, outputs and side effects beyond the edited function. |
+| Cover related cases | Search similar entry points and conditions; identify which cases change and which remain unchanged. |
+| Verify external protocols | Check dependency implementations, contracts and sanitized examples instead of guessing upstream behavior. |
+| Preserve failure semantics | Invocation or parsing failures must not become normal `not_found` results. |
+| Match verification to risk | Check input boundaries, transaction and database semantics, and scheduling dates and timezones as applicable. |
+
 ## Development setup
 
 Follow the [README](README.md#getting-started). Any environment satisfying the
 PHP and extension requirements is suitable, including local PHP or containers.
 Create a feature branch from the latest `master`; submit changes through a
 pull request.
+Preserve existing changes. Concurrent writing sessions should use separate
+working directories. Personal environment details belong in local instructions.
+Follow the [documentation maintenance rules](docs/architecture.md#documentation-maintenance).
 
 Keep credentials and personal environment files out of commits. The tracked
 `.env.testing` is shared test configuration, not a place for private credentials.
@@ -26,8 +51,10 @@ vendor/bin/phpunit
 ```
 
 Use `vendor/bin/pint` to fix formatting. Follow [code style](docs/code-style.md).
-Add or update meaningful tests for behavior changes. Update relevant docs when
-changing public behavior, configuration or operating requirements.
+Documentation-only changes require link, example and formatting checks rather
+than another application test run. Test observable behavior without locking down
+unrelated implementation details. Record real Bing integration checks separately
+and state whether they were performed.
 
 The default suite uses isolated in-memory SQLite and makes no Bing requests.
 PostgreSQL-specific tests require PostgreSQL 18 and the PDO PostgreSQL extension.
@@ -43,6 +70,20 @@ must be able to create the test database. Migrations create it if absent and
 reset its tables during testing. The test base rejects PostgreSQL database names
 other than `wallpaper_api_test`. Do not use shared or production credentials.
 All PostgreSQL-specific tests should pass when using that backend.
+The connection guard runs before database traits; a permitted database name does
+not prove the host or role is safe. Verify both independently.
+
+Run targeted tests while changing behavior and all applicable checks before
+handoff. Bug fixes should include a regression test that catches the original
+behavior. Where practical, verify in an isolated working directory that the old
+logic fails a behavioral assertion; compilation failures and skipped tests do
+not demonstrate reproduction. Explain when this is inapplicable. Do not invent
+regression tests for documentation or formatting changes.
+
+Record the verified commit SHA, runtime versions, checks and results, relevant
+pass/skip counts, and checks not run or failing with reasons. After new commits,
+repeat affected checks. Cancelled or incomplete CI is not a pass; investigate
+known failures rather than rerunning them repeatedly and claiming a fix.
 
 ## Issues and pull requests
 
@@ -50,9 +91,29 @@ Include reproducible steps, expected and actual behavior, and relevant runtime
 versions in bug reports. Use synthetic examples and sanitized diagnostics;
 never attach credentials, private data or full environment files.
 
-Keep changes focused. Explain the problem, resulting behavior and checks run
-in your pull request. Preserve compatibility with the [v1 contract](docs/contracts/v1.md)
-unless a breaking change has been discussed. Do not include private planning
-notes or generated caches.
+Keep commits focused with short subjects. For substantive changes, explain why
+and record key verification in the commit body.
+
+Describe each affected feature in the PR: its trigger, before/after behavior,
+and effects on interfaces, data, compatibility and failures. For refactoring,
+state which contracts remain unchanged. Documentation alone is not evidence
+that the implementation is correct. Link relevant source, documentation and
+existing issues; small changes do not require a new issue. Use the
+[PR template](.github/PULL_REQUEST_TEMPLATE.md).
+
+Preserve compatibility with the [v1 contract](docs/contracts/v1.md) unless a
+breaking change has been discussed. Do not include private planning notes or
+generated caches.
+
+Review in this order:
+
+1. Locate the actual entry points through the feature map.
+2. Compare the base and current commits; trace callers, state changes and side effects.
+3. Check public fields, transactions, dates and exception boundaries against test evidence.
+4. Verify documentation against code, check links and record unverified areas.
+
+Tie review conclusions to a specific commit. Revisit affected behavior after
+new commits, and verify the reviewed head and applicable CI before merging.
+A review does not authorize merging, releasing or deploying.
 
 Communicate respectfully and keep feedback focused on the work.

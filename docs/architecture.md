@@ -1,8 +1,27 @@
-# Application architecture
+# Architecture and feature map
 
-The API is a small Laravel monolith. HTTP and console entry points share
+The API is a small Laravel 13 monolith. HTTP and console entry points share
 application services; services use Eloquent models for persistence and a Bing
 integration for external metadata. There is no additional repository layer.
+This document describes implemented behavior. Proposals and schedules belong
+in issues, PRs or the private Project.
+
+## Find code by feature
+
+| Feature | Entry points and implementation | Tests |
+| --- | --- | --- |
+| Exact-date and date-range queries | [routes/api.php](../routes/api.php) → [WallpaperController](../app/Http/Controllers/WallpaperController.php) → [WallpaperQueryService](../app/Services/WallpaperQueryService.php) | [WallpaperQueryTest](../tests/Feature/WallpaperQueryTest.php), [WallpaperQueryServiceTest](../tests/Feature/WallpaperQueryServiceTest.php) |
+| Input and calendar rules | [WallpaperQueryRequest](../app/Http/Requests/WallpaperQueryRequest.php), [CalendarDate::isCanonical](../app/Support/CalendarDate.php) | [CalendarDateTest](../tests/Unit/CalendarDateTest.php), WallpaperQueryTest |
+| Public JSON fields | [WallpaperResource::toArray](../app/Http/Resources/WallpaperResource.php), [v1 contract](contracts/v1.md) | WallpaperQueryTest, [ContractFixturesTest](../tests/Unit/ContractFixturesTest.php) |
+| Synchronization and auditing | [SyncWallpapers::handle](../app/Console/Commands/SyncWallpapers.php) → [WallpaperSyncService::sync](../app/Services/WallpaperSyncService.php) | [SyncWallpapersTest](../tests/Feature/SyncWallpapersTest.php) |
+| Composer invocation and protocol | [BingWallpaperGateway::fetch](../app/Integrations/Bing/BingWallpaperGateway.php), [ComposerDocumentValidator::validate](../app/Integrations/Bing/ComposerDocumentValidator.php), [BingWallpaperResult](../app/Integrations/Bing/BingWallpaperResult.php) | [BingWallpaperGatewayTest](../tests/Feature/BingWallpaperGatewayTest.php), [ComposerDocumentValidatorTest](../tests/Unit/ComposerDocumentValidatorTest.php) |
+| Daily scheduling and overlap prevention | [routes/console.php](../routes/console.php), [daily synchronization](operations/daily-sync.md) | [WallpaperScheduleTest](../tests/Feature/WallpaperScheduleTest.php) |
+| Tables, calendar dates and UTC instants | [Migrations](../database/migrations), [Wallpaper](../app/Models/Wallpaper.php), [SyncRun](../app/Models/SyncRun.php) | [PersistenceTest](../tests/Feature/PersistenceTest.php) |
+| Safe errors and logs | [bootstrap/app.php](../bootstrap/app.php), [NormalizeApiErrors](../app/Http/Middleware/NormalizeApiErrors.php), [ApiErrorResponse](../app/Http/Responses/ApiErrorResponse.php) | [ApiExceptionTest](../tests/Feature/ApiExceptionTest.php) |
+| Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
+| Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
+
+Navigation does not replace reading the implementation and its callers.
 
 ## Responsibilities
 
@@ -31,7 +50,9 @@ flowchart TD
     Validation --> Controller[WallpaperController]
     Controller --> Query[WallpaperQueryService]
     Query --> Read[Wallpaper / database]
-    Read --> Resource[WallpaperResource]
+    Read --> Query
+    Query --> Controller
+    Controller --> Resource[WallpaperResource]
     Resource --> Response[Public JSON response]
     Schedule[Daily scheduler or manual invocation] --> Command[SyncWallpapers]
     Command --> Sync[WallpaperSyncService]
@@ -54,6 +75,19 @@ before the synchronization transaction begins. A found wallpaper and its success
 audit commit together. A persistence failure rolls back the transaction before
 an independent failure audit is attempted. Each lookup gets its own audit;
 repeated successful lookups upsert the same source identity.
+Public queries read only the database: they neither call Bing nor create audits.
+Synchronization stores metadata and original JSON; it does not download images
+or automatically commit to Git. The installed integration version is recorded
+in [composer.lock](../composer.lock); protocol fields belong to the
+[v1 contract](contracts/v1.md).
+
+| Integration result or failure | Wallpaper writes | Audit outcome |
+| --- | --- | --- |
+| `found` | Upsert by source identity, in the success-audit transaction | `success` |
+| `not_found` | None | `not_found` |
+| Upstream error, command failure or invalid protocol | None | `failed`, with a fixed safe classification |
+| Transaction persistence failure | Rolled back | Attempt `PERSISTENCE_FAILURE` outside the transaction |
+| Failure audit also cannot be saved | No partial transaction writes retained | Command logs `AUDIT_UNAVAILABLE` and exits with failure |
 
 ## Data semantics
 
@@ -67,6 +101,17 @@ schema versions and synchronization records are not exposed. Original JSON value
 types are preserved by the integration and ingestion service.
 
 ## API errors and logging
+
+```mermaid
+flowchart TD
+    Direct[Direct error response] --> Middleware[NormalizeApiErrors]
+    Exception[Thrown exception] --> Handler[Laravel exception handler]
+    Handler --> Render[Custom render or application fallback]
+    Render --> Respond[Exception response callback]
+    Middleware --> Formatter[ApiErrorResponse]
+    Respond --> Formatter
+    Formatter --> Safe[Fixed JSON error and original HTTP status]
+```
 
 API exceptions are handled centrally, independently of `APP_DEBUG`. Unexpected
 exceptions return a fixed `INTERNAL_ERROR` JSON response and HTTP 500. Known HTTP
@@ -99,13 +144,32 @@ corresponding schema and operational setup.
 The daily schedule retains its named persistent file-cache overlap lock and
 previous-day UTC behavior. This assumes one scheduler host with persistent
 storage. Multi-instance scheduling and shared locking are deployment decisions,
-not provided by this refactor.
+not provided by the application. See [daily synchronization](operations/daily-sync.md)
+for the schedule, date selection, locks and recovery procedures.
 
 Unit tests cover calendar rules and Composer protocol validation. Feature tests
 cover the real installed command with a fake provider, services, persistence,
 scheduling, HTTP contracts and sanitized exceptions. The test base checks the
 dedicated connection before database traits can migrate; PostgreSQL tests require
 `wallpaper_api_test`. CI covers SQLite and PostgreSQL 18 on PHP 8.4.
+See [contributing](../CONTRIBUTING.md#verification) for isolated test database
+configuration and verification evidence.
+
+## Documentation maintenance
+
+Update the owning reference in the same PR when responsibilities, interfaces,
+execution paths, states, compatibility or failure behavior change. Check source
+links and test evidence. Internal implementation changes that preserve these
+contracts do not require a design-document update.
+
+Maintain each fact in one place and link to it elsewhere. Reference files and
+named symbols instead of volatile line numbers or copied implementations.
+Describe current behavior; keep unimplemented designs in issues or PRs. Split
+out a new module reference only when needed, and link it from this map.
+
+[Code style](code-style.md) owns naming and readability rules; the
+[v1 contract](contracts/v1.md) owns protocol fields; [contributing](../CONTRIBUTING.md)
+owns development and review requirements.
 
 ## Extension boundaries
 
