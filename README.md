@@ -101,6 +101,7 @@ Pint uses the Laravel preset and does not enforce strict typing declarations.
 - [Architecture](docs/architecture.md): responsibilities, data flows and extension boundaries
 - [API and Composer contract](docs/contracts/v1.md): inputs, responses and compatibility
 - [Daily synchronization](docs/operations/daily-sync.md): operation and troubleshooting
+- [Public API controls](docs/operations/public-api.md): CORS, request limits and resource boundaries
 - [Code style](docs/code-style.md): contribution conventions
 - [Issues](https://github.com/haoyuqi/wallpaper-api/issues): bug reports, questions and proposals
 - [Contributing](CONTRIBUTING.md): development setup and pull requests

@@ -93,6 +93,7 @@ PostgreSQL 测试配置见 [贡献指南](CONTRIBUTING.md)，命名和可读性�
 以下详细文档目前使用英文。
 
 - [架构](docs/architecture.md)：职责、数据流和扩展边界
+- [公开 API 防护](docs/operations/public-api.md)：跨域配置、请求限流与资源边界
 - [API 与 Composer 契约](docs/contracts/v1.md)：输入、响应和兼容性
 - [每日同步](docs/operations/daily-sync.md)：运行与故障排查
 - [代码风格](docs/code-style.md)：贡献约定
