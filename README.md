@@ -66,6 +66,11 @@ Valid queries return HTTP 200, including empty results. Invalid parameters
 return HTTP 422 with stable error codes. Queries read stored data and do not
 contact Bing. See the [v1 contract](docs/contracts/v1.md) for fields and examples.
 
+Public reads default to 60 requests per IP per minute. Over-budget requests
+return HTTP 429 with `Retry-After`. CORS defaults to public, credential-free
+reads; configure `CORS_ALLOWED_ORIGINS` and `WALLPAPER_REQUESTS_PER_MINUTE` for
+your deployment. See [public API controls](docs/operations/public-api.md).
+
 Version 1 has no authentication, tags, keyword filters or pagination. Large
 ranges can return large responses; choose an appropriate range for your client.
 
@@ -82,12 +87,27 @@ php artisan schedule:list
 See [daily synchronization](docs/operations/daily-sync.md) for scheduler
 configuration, locks, failure logs and recovery.
 
+## Production and releases
+
+The [production image](Dockerfile) runs PHP 8.4 with Apache as a non-root user
+on port 8080. It excludes secrets, development dependencies and archived images;
+it does not start a scheduler or migrate automatically. CI builds the image and
+checks it against a disposable PostgreSQL 18 database.
+
+Follow the [deployment runbook](docs/operations/deployment.md) for runtime secrets,
+TLS/proxies, persistent locks, migrations, health checks, backups and rollback.
+`/up` confirms application boot, not database availability or synchronization
+freshness. Actual hosting and resource provisioning are separate from the code
+release. See [release gates](docs/release.md) and [CHANGELOG](CHANGELOG.md).
+
 ## Tests and code style
 
 ```bash
 composer validate --strict
 vendor/bin/pint --test
+vendor/bin/phpstan analyse --no-progress --memory-limit=512M
 vendor/bin/phpunit
+composer audit --locked --no-interaction
 ```
 
 The default test suite uses isolated in-memory SQLite. PostgreSQL-specific tests
@@ -95,6 +115,9 @@ are skipped in that mode. CI runs the suite with both SQLite and PostgreSQL 18
 on PHP 8.4. See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
 and [code style](docs/code-style.md) for naming and readability conventions.
 Pint uses the Laravel preset and does not enforce strict typing declarations.
+Larastan checks application code, routing, bootstrap and database definitions at
+level 5 without an ignored-error baseline. CI also tests the production container;
+automated checks do not call live Bing.
 
 ## Documentation and support
 
@@ -102,6 +125,9 @@ Pint uses the Laravel preset and does not enforce strict typing declarations.
 - [API and Composer contract](docs/contracts/v1.md): inputs, responses and compatibility
 - [Daily synchronization](docs/operations/daily-sync.md): operation and troubleshooting
 - [Public API controls](docs/operations/public-api.md): CORS, request limits and resource boundaries
+- [Deployment runbook](docs/operations/deployment.md): container, migrations, backups and rollback
+- [Release checklist](docs/release.md) and [changelog](CHANGELOG.md): publication gates and changes
+- [Security policy](SECURITY.md): private vulnerability reporting
 - [Code style](docs/code-style.md): contribution conventions
 - [Issues](https://github.com/haoyuqi/wallpaper-api/issues): bug reports, questions and proposals
 - [Contributing](CONTRIBUTING.md): development setup and pull requests

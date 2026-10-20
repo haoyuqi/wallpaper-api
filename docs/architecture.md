@@ -20,6 +20,7 @@ in issues, PRs or the private Project.
 | Safe errors and logs | [bootstrap/app.php](../bootstrap/app.php), [NormalizeApiErrors](../app/Http/Middleware/NormalizeApiErrors.php), [ApiErrorResponse](../app/Http/Responses/ApiErrorResponse.php) | [ApiExceptionTest](../tests/Feature/ApiExceptionTest.php) |
 | CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [public API controls](operations/public-api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
+| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [deployment runbook](operations/deployment.md), [release checklist](release.md) | [Container smoke checks](../scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
 | Repository-level archive and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
@@ -136,6 +137,8 @@ only a fixed message, error code and exception class; SQL, bindings, request
 values, exception messages and stack traces are excluded. This replaces the
 default report for those exceptions to avoid logging them twice. Laravel's
 normally unreported HTTP and validation exceptions remain unreported.
+Anonymous exception classes use their parent type in logs because PHP embeds
+source paths in anonymous class names.
 
 Production must still disable debugging. The API fallback operates after the
 application has booted; web-server, PHP startup and application-bootstrap failures
@@ -159,6 +162,9 @@ cover the real installed command with a fake provider, services, persistence,
 scheduling, HTTP contracts and sanitized exceptions. The test base checks the
 dedicated connection before database traits can migrate; PostgreSQL tests require
 `wallpaper_api_test`. CI covers SQLite and PostgreSQL 18 on PHP 8.4.
+It also runs Larastan level 5, dependency audit and real production-container
+HTTP smoke tests with PostgreSQL. The image runs non-root and packages production
+dependencies only; it starts no scheduler and performs no automatic migration.
 See [contributing](../CONTRIBUTING.md#verification) for isolated test database
 configuration and verification evidence.
 

@@ -39,9 +39,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            // Anonymous class names contain their source path and line number.
+            $exceptionType = (new ReflectionClass($exception))->isAnonymous()
+                ? (get_parent_class($exception) ?: Throwable::class)
+                : $exception::class;
+
             Log::error('API request failed.', [
                 'error_code' => 'INTERNAL_ERROR',
-                'exception_type' => $exception::class,
+                'exception_type' => $exceptionType,
             ]);
 
             return false;
