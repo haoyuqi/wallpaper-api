@@ -37,7 +37,7 @@ final class WallpaperSyncService
 
         try {
             return DB::transaction(function () use ($result, $attributes): SyncRun {
-                if ($result->status === 'found') {
+                if ($result->status === 'found' && $result->data !== null && $result->retrievedAt !== null) {
                     $data = $result->data;
                     Wallpaper::query()->upsert([
                         'source' => BingWallpaperGateway::SOURCE,

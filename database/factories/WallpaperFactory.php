@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Integrations\Bing\BingWallpaperGateway;
 use App\Models\Wallpaper;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,9 +18,9 @@ class WallpaperFactory extends Factory
     public function definition(): array
     {
         return [
-            'source' => 'bing',
+            'source' => BingWallpaperGateway::SOURCE,
             'source_item_id' => (string) Str::uuid(),
-            'market' => 'en-US',
+            'market' => BingWallpaperGateway::MARKET,
             'source_date' => '2026-08-31',
             'title' => 'Synthetic wallpaper',
             'copyright_text' => 'Synthetic test copyright',

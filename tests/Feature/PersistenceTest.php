@@ -132,6 +132,10 @@ final class PersistenceTest extends TestCase
         self::assertContains('wallpapers_source_date_index', $indexes);
         self::assertContains('wallpapers_source_source_date_index', $indexes);
 
+        $syncRunIndexes = collect(DB::select("SELECT indexname FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'sync_runs'"))
+            ->pluck('indexname');
+        self::assertContains('sync_runs_requested_date_status_index', $syncRunIndexes);
+
         $wallpaper = Wallpaper::factory()->create(['raw_payload' => '{}']);
         self::assertSame('object', DB::table('wallpapers')->where('id', $wallpaper->id)->selectRaw('jsonb_typeof(raw_payload) AS json_type')->first()->json_type);
 

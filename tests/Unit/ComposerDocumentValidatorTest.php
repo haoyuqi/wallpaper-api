@@ -15,13 +15,13 @@ final class ComposerDocumentValidatorTest extends TestCase
     #[DataProvider('acceptedFixtures')]
     public function test_accepts_contract_fixtures(string $fixture, int $exitCode, string $date, string $status): void
     {
-        $result = (new ComposerDocumentValidator)->validate($this->fixture($fixture), $exitCode, $date);
+        $result = (new ComposerDocumentValidator)->validate(self::fixture($fixture), $exitCode, $date);
 
         self::assertSame($status, $result->status);
         self::assertSame($date, $result->date);
         self::assertNull($result->failureCategory);
-        self::assertSame(json_decode($this->fixture($fixture))->schemaVersion, $result->schemaVersion);
-        self::assertSame($this->fixture($fixture), $result->responseDocument);
+        self::assertSame(json_decode(self::fixture($fixture))->schemaVersion, $result->schemaVersion);
+        self::assertSame(self::fixture($fixture), $result->responseDocument);
         self::assertSame('2026-09-01T00:00:00Z', $result->retrievedAt?->format('Y-m-d\TH:i:s\Z'));
 
         if ($status === 'found') {
@@ -48,7 +48,7 @@ final class ComposerDocumentValidatorTest extends TestCase
     #[DataProvider('invalidFields')]
     public function test_rejects_invalid_required_fields(string $path, mixed $value): void
     {
-        $document = json_decode($this->fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
+        $document = json_decode(self::fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
         $target = $document;
         $parts = explode('.', $path);
         $last = array_pop($parts);
@@ -83,80 +83,83 @@ final class ComposerDocumentValidatorTest extends TestCase
         yield 'non-null found error' => ['error', new stdClass];
         yield 'non-UTC timestamp' => ['retrievedAt', '2026-09-01T08:00:00+08:00'];
         yield 'invalid timestamp' => ['retrievedAt', '2026-02-30T00:00:00Z'];
+        yield 'overflow second timestamp' => ['retrievedAt', '2026-09-01T00:00:60Z'];
+        yield 'non-string timestamp' => ['retrievedAt', 1756684800];
     }
 
-    public function test_rejects_missing_fields_and_multiple_documents(): void
+    #[DataProvider('malformedOutputs')]
+    public function test_rejects_missing_fields_and_multiple_documents(string $output): void
     {
-        $document = json_decode($this->fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
+        $this->expectException(UnexpectedValueException::class);
+        (new ComposerDocumentValidator)->validate($output, 0, '2026-08-31');
+    }
+
+    public static function malformedOutputs(): iterable
+    {
+        $document = json_decode(self::fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
         unset($document->rawPayload);
 
-        $validator = new ComposerDocumentValidator;
-        foreach ([json_encode($document, JSON_THROW_ON_ERROR)."\n", "{}\n{}\n", "not json\n", '{}', '[]'."\n"] as $output) {
-            try {
-                $validator->validate($output, 0, '2026-08-31');
-                self::fail('Invalid output was accepted.');
-            } catch (UnexpectedValueException) {
-                self::assertTrue(true);
-            }
-        }
+        yield 'missing raw payload' => [json_encode($document, JSON_THROW_ON_ERROR)."\n"];
+        yield 'multiple documents' => ["{}\n{}\n"];
+        yield 'non-json' => ["not json\n"];
+        yield 'missing trailing newline' => ['{}'];
+        yield 'array root' => ["[]\n"];
     }
 
-    public function test_rejects_missing_required_fields_at_every_level(): void
+    #[DataProvider('requiredFieldPaths')]
+    public function test_rejects_missing_required_fields_at_every_level(string $path): void
+    {
+        $document = json_decode(self::fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
+        $target = $document;
+        $parts = explode('.', $path);
+        $last = array_pop($parts);
+        foreach ($parts as $part) {
+            $target = $target->{$part};
+        }
+        unset($target->{$last});
+
+        $this->expectException(UnexpectedValueException::class);
+        (new ComposerDocumentValidator)->validate(json_encode($document, JSON_THROW_ON_ERROR)."\n", 0, '2026-08-31');
+    }
+
+    public static function requiredFieldPaths(): iterable
     {
         foreach (['schemaVersion', 'status', 'query', 'data', 'rawPayload', 'error', 'retrievedAt', 'query.source', 'query.market', 'query.date', 'data.sourceDate', 'data.sourceItemId', 'data.title', 'data.copyright', 'data.copyrightLink', 'data.imageUrl', 'data.downloadUrl'] as $path) {
-            $document = json_decode($this->fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
-            $target = $document;
-            $parts = explode('.', $path);
-            $last = array_pop($parts);
-            foreach ($parts as $part) {
-                $target = $target->{$part};
-            }
-            unset($target->{$last});
-
-            try {
-                (new ComposerDocumentValidator)->validate(json_encode($document, JSON_THROW_ON_ERROR)."\n", 0, '2026-08-31');
-                self::fail('Missing '.$path.' was accepted.');
-            } catch (UnexpectedValueException) {
-                self::assertTrue(true);
-            }
+            yield $path => [$path];
         }
     }
 
-    public function test_rejects_invalid_not_found_and_technical_error_shapes(): void
+    #[DataProvider('invalidNotFoundAndErrorShapes')]
+    public function test_rejects_invalid_not_found_and_technical_error_shapes(string $fixture, int $exitCode, string $date, string $path, mixed $value): void
     {
-        $cases = [
-            ['not-found-v1.0.json', 0, '1900-01-01', 'data', new stdClass],
-            ['not-found-v1.0.json', 0, '1900-01-01', 'error', new stdClass],
-            ['error-v1.0.json', 1, '2026-08-31', 'error.code', ''],
-            ['error-v1.0.json', 1, '2026-08-31', 'error.message', null],
-            ['error-v1.0.json', 1, '2026-08-31', 'error.retryable', 'true'],
-            ['error-v1.0.json', 1, '2026-08-31', 'data', new stdClass],
-        ];
-
-        foreach ($cases as [$fixture, $exitCode, $date, $path, $value]) {
-            $document = json_decode($this->fixture($fixture), false, 512, JSON_THROW_ON_ERROR);
-            $target = $document;
-            $parts = explode('.', $path);
-            $last = array_pop($parts);
-            foreach ($parts as $part) {
-                $target = $target->{$part};
-            }
-            $target->{$last} = $value;
-
-            try {
-                (new ComposerDocumentValidator)->validate(json_encode($document, JSON_THROW_ON_ERROR)."\n", $exitCode, $date);
-                self::fail('Invalid '.$path.' was accepted.');
-            } catch (UnexpectedValueException) {
-                self::assertTrue(true);
-            }
+        $document = json_decode(self::fixture($fixture), false, 512, JSON_THROW_ON_ERROR);
+        $target = $document;
+        $parts = explode('.', $path);
+        $last = array_pop($parts);
+        foreach ($parts as $part) {
+            $target = $target->{$part};
         }
+        $target->{$last} = $value;
+
+        $this->expectException(UnexpectedValueException::class);
+        (new ComposerDocumentValidator)->validate(json_encode($document, JSON_THROW_ON_ERROR)."\n", $exitCode, $date);
+    }
+
+    public static function invalidNotFoundAndErrorShapes(): iterable
+    {
+        yield 'not found with data' => ['not-found-v1.0.json', 0, '1900-01-01', 'data', new stdClass];
+        yield 'not found with error' => ['not-found-v1.0.json', 0, '1900-01-01', 'error', new stdClass];
+        yield 'error with empty code' => ['error-v1.0.json', 1, '2026-08-31', 'error.code', ''];
+        yield 'error with null message' => ['error-v1.0.json', 1, '2026-08-31', 'error.message', null];
+        yield 'error with string retryable' => ['error-v1.0.json', 1, '2026-08-31', 'error.retryable', 'true'];
+        yield 'error with data' => ['error-v1.0.json', 1, '2026-08-31', 'data', new stdClass];
     }
 
     #[DataProvider('invalidPairings')]
     public function test_rejects_exit_and_status_conflicts(string $fixture, int $exitCode, string $date): void
     {
         $this->expectException(UnexpectedValueException::class);
-        (new ComposerDocumentValidator)->validate($this->fixture($fixture), $exitCode, $date);
+        (new ComposerDocumentValidator)->validate(self::fixture($fixture), $exitCode, $date);
     }
 
     public static function invalidPairings(): iterable
@@ -171,7 +174,7 @@ final class ComposerDocumentValidatorTest extends TestCase
     #[DataProvider('rawShapes')]
     public function test_preserves_raw_json_value_shape(mixed $raw, string $expectedType): void
     {
-        $document = json_decode($this->fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
+        $document = json_decode(self::fixture('found-v1.0.json'), false, 512, JSON_THROW_ON_ERROR);
         $document->rawPayload = $raw;
 
         $result = (new ComposerDocumentValidator)->validate(json_encode($document, JSON_THROW_ON_ERROR)."\n", 0, '2026-08-31');
@@ -187,7 +190,7 @@ final class ComposerDocumentValidatorTest extends TestCase
         yield 'null' => [null, 'null'];
     }
 
-    private function fixture(string $name): string
+    private static function fixture(string $name): string
     {
         $contents = file_get_contents(__DIR__.'/../Fixtures/Contracts/composer/'.$name);
         self::assertIsString($contents);

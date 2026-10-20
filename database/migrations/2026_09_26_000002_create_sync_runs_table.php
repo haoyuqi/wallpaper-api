@@ -22,6 +22,8 @@ return new class extends Migration
             $table->text('error_message')->nullable();
             $table->timestampTz('started_at');
             $table->timestampTz('finished_at')->nullable();
+
+            $table->index(['requested_date', 'status'], 'sync_runs_requested_date_status_index');
         });
     }
 

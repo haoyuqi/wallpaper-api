@@ -6,6 +6,7 @@ namespace App\Support;
 
 final class CalendarDate
 {
+    /** @phpstan-assert-if-true non-empty-string $date */
     public static function isCanonical(mixed $date): bool
     {
         if (! is_string($date) || preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/D', $date, $parts) !== 1) {

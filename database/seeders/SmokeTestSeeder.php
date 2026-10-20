@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
+use App\Integrations\Bing\BingWallpaperGateway;
 use App\Models\Wallpaper;
 use Illuminate\Database\Seeder;
 
@@ -10,9 +13,9 @@ final class SmokeTestSeeder extends Seeder
     public function run(): void
     {
         Wallpaper::query()->updateOrCreate(['id' => '01K41V6QAZ0000000000000000'], [
-            'source' => 'bing',
+            'source' => BingWallpaperGateway::SOURCE,
             'source_item_id' => 'smoke-test-private-source-id',
-            'market' => 'en-US',
+            'market' => BingWallpaperGateway::MARKET,
             'source_date' => '2026-08-31',
             'title' => 'Mountain lake at sunrise',
             'copyright_text' => 'Example © Photographer',

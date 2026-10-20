@@ -11,6 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /** @mixin Wallpaper */
 final class WallpaperResource extends JsonResource
 {
+    /** @return array<string, ?string> */
     public function toArray(Request $request): array
     {
         return [

@@ -17,16 +17,19 @@ final class WallpaperQueryRequest extends FormRequest
         return true;
     }
 
+    /** @return array<never, never> */
     public function rules(): array
     {
         return [];
     }
 
+    /** @return array<string, mixed> */
     public function validationData(): array
     {
         return $this->query();
     }
 
+    /** @return list<callable(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator): void {
