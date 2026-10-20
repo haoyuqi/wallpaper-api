@@ -64,7 +64,8 @@ ID descending and contain only public metadata.
 
 Valid queries return HTTP 200, including empty results. Invalid parameters
 return HTTP 422 with stable error codes. Queries read stored data and do not
-contact Bing. See the [v1 contract](docs/contracts/v1.md) for fields and examples.
+contact Bing. See the [API reference](docs/api.md) for parameters, curl examples,
+response fields and errors.
 
 Public reads default to 60 requests per IP per minute. Over-budget requests
 return HTTP 429 with `Retry-After`. CORS defaults to public, credential-free
@@ -122,6 +123,7 @@ automated checks do not call live Bing.
 ## Documentation and support
 
 - [Architecture](docs/architecture.md): responsibilities, data flows and extension boundaries
+- [API reference](docs/api.md): query parameters, curl examples, responses and errors
 - [API and Composer contract](docs/contracts/v1.md): inputs, responses and compatibility
 - [Daily synchronization](docs/operations/daily-sync.md): operation and troubleshooting
 - [Public API controls](docs/operations/public-api.md): CORS, request limits and resource boundaries

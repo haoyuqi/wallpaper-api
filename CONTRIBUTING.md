@@ -11,6 +11,7 @@ contract or major features before implementing them.
 | Installation, runtime requirements and commands | [README](README.md#getting-started) |
 | Feature implementations and tests | [Architecture and feature map](docs/architecture.md) |
 | Naming, types and readability | [Code style](docs/code-style.md) |
+| Public API usage and examples | [API reference](docs/api.md) |
 | HTTP and Composer protocols | [v1 contract](docs/contracts/v1.md) |
 | Scheduling, locks, logs and recovery | [Daily synchronization](docs/operations/daily-sync.md) |
 | Container, backups and rollback | [Deployment runbook](docs/operations/deployment.md) |

@@ -58,7 +58,8 @@ GET /api/v1/wallpapers?from=2026-10-01&to=2026-10-07
 日期范围包含两端。结果按来源日期和 ID 降序排列，仅包含公开元数据。
 
 有效查询返回 HTTP 200，包括没有结果的情况。无效参数返回 HTTP 422 和稳定的错误码。
-查询只读取已存储的数据，不会请求 Bing。字段和示例见 [v1 契约](docs/contracts/v1.md)。
+查询只读取已存储的数据，不会请求 Bing。参数、curl 示例、返回字段和错误说明见
+[API 使用文档](docs/api.md)。
 
 默认每个 IP 每分钟允许 60 次公开查询，超限返回 HTTP 429 和 `Retry-After`。
 默认允许不携带凭据的公开跨域读取，可通过 `CORS_ALLOWED_ORIGINS` 和
@@ -112,6 +113,7 @@ CI 还会验证生产容器；自动化检查不会请求真实 Bing。
 以下详细文档目前使用英文。
 
 - [架构](docs/architecture.md)：职责、数据流和扩展边界
+- [API 使用文档](docs/api.md)：查询参数、curl 示例、响应与错误说明
 - [公开 API 防护](docs/operations/public-api.md)：跨域配置、请求限流与资源边界
 - [API 与 Composer 契约](docs/contracts/v1.md)：输入、响应和兼容性
 - [每日同步](docs/operations/daily-sync.md)：运行与故障排查
