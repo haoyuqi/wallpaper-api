@@ -49,10 +49,11 @@ final class ComposerDocumentValidator
             || self::field($query, 'source') !== BingWallpaperGateway::SOURCE
             || self::field($query, 'market') !== BingWallpaperGateway::MARKET
             || self::field($query, 'date') !== $requestedDate
-            || ! is_string($retrievedAt)
-            || ! self::isUtcTimestamp($retrievedAt)) {
+            || ! is_string($retrievedAt)) {
             throw new UnexpectedValueException('Invalid query or retrieval time.');
         }
+
+        $parsedRetrievedAt = self::parseUtcTimestamp($retrievedAt);
 
         if ($status === 'found' && $exitCode === 0 && $error === null && $data instanceof stdClass) {
             $normalizedData = self::wallpaperData($data, $requestedDate);
@@ -71,21 +72,24 @@ final class ComposerDocumentValidator
             $normalizedData,
             $rawPayload,
             $error,
-            DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', $retrievedAt, new DateTimeZone('UTC')),
+            $parsedRetrievedAt,
             $schemaVersion,
             $output,
         );
     }
 
-    private static function isUtcTimestamp(string $value): bool
+    private static function parseUtcTimestamp(string $value): DateTimeImmutable
     {
         if (preg_match('/^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/D', $value) !== 1) {
-            return false;
+            throw new UnexpectedValueException('Invalid query or retrieval time.');
         }
 
         $parsed = DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', $value, new DateTimeZone('UTC'));
+        if ($parsed === false || $parsed->format('Y-m-d\TH:i:s\Z') !== $value) {
+            throw new UnexpectedValueException('Invalid query or retrieval time.');
+        }
 
-        return $parsed !== false && $parsed->format('Y-m-d\TH:i:s\Z') === $value;
+        return $parsed;
     }
 
     /**

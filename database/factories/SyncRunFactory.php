@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Integrations\Bing\BingWallpaperGateway;
 use App\Models\SyncRun;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,8 +17,8 @@ class SyncRunFactory extends Factory
     public function definition(): array
     {
         return [
-            'source' => 'bing',
-            'market' => 'en-US',
+            'source' => BingWallpaperGateway::SOURCE,
+            'market' => BingWallpaperGateway::MARKET,
             'requested_date' => '2026-08-31',
             'status' => 'success',
             'schema_version' => '1.0',

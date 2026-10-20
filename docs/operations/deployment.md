@@ -54,11 +54,12 @@ keep `bootstrap/cache` private and do not export it as an artifact.
 
 Configuration and proxy assumptions are detailed in [public API controls](public-api.md).
 PHP has a 128 MiB memory limit and 60-second web execution limit in this image;
-Apache has a 60-second timeout. Set a suitable container memory limit and
-concurrency at the hosting layer: each Apache worker can consume PHP memory.
-Unbounded matching result counts remain a documented API limitation. Limit
-instances and total concurrency before public exposure; no application control
-is a hard infrastructure spending cap.
+Apache has a 60-second timeout and allows up to 8 concurrent workers (`MaxRequestWorkers 8`,
+for a theoretical PHP worker ceiling of roughly 8 × 128 MiB ≈ 1 GiB). Set a suitable
+container memory limit and concurrency at the hosting layer: each Apache worker
+can consume PHP memory. Unbounded matching result counts remain a documented API
+limitation. Limit instances and total concurrency before public exposure; no
+application control is a hard infrastructure spending cap.
 
 Terminate TLS at the platform or a reverse proxy, forwarding only to port 8080.
 Trust only verified proxy addresses if enabling forwarded-IP resolution; there

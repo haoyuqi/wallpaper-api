@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Artisan;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use SplFileInfo;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
@@ -87,10 +88,6 @@ final class LegacyArchiveGuardTest extends TestCase
         self::assertSame([], $trackedFiles, 'Legacy PNGs must remain outside the current tracked tree.');
     }
 
-    /**
-     * @param  list<string>  $extensions
-     * @return list<string>
-     */
     private function filesWithExtensions(string $directory, array $extensions): array
     {
         $files = [];
@@ -98,7 +95,6 @@ final class LegacyArchiveGuardTest extends TestCase
             new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)
         );
 
-        /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
             if (! $file->isFile() || ! in_array($file->getExtension(), $extensions, true)) {
                 continue;
