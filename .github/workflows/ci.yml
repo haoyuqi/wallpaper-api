@@ -184,7 +184,10 @@ jobs:
 
       - name: Show container logs on failure
         if: failure()
-        run: docker logs wallpaper-smoke
+        run: |
+          if docker container inspect wallpaper-smoke >/dev/null 2>&1; then
+            docker logs wallpaper-smoke
+          fi
 
       - name: Remove disposable container
         if: always()

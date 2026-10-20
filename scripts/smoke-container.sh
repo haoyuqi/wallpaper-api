@@ -11,6 +11,8 @@ test "$(docker exec "$container_name" id -u)" != 0
 docker exec "$container_name" test ! -e .env
 docker exec "$container_name" test ! -d storage/bing-wallpaper
 docker exec "$container_name" test ! -e vendor/bin/phpunit
+docker exec "$container_name" test ! -w bootstrap/app.php
+docker exec "$container_name" test -w bootstrap/cache
 docker exec "$container_name" php artisan migrate --force --no-interaction
 docker exec "$container_name" php artisan config:cache
 docker exec "$container_name" php artisan route:cache
