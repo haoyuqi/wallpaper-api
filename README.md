@@ -1,5 +1,10 @@
 # Wallpaper API
 
+[![CI](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/haoyuqi/wallpaper-api)](https://github.com/haoyuqi/wallpaper-api/releases/latest)
+
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 A Laravel 13 API for collecting Bing wallpaper metadata and querying it by date.
