@@ -58,10 +58,7 @@ final class ApiErrorResponse
         return new JsonResponse(['error' => ['code' => $code, 'message' => $message]], $status, $headers);
     }
 
-    /**
-     * @param  array<string, array<int, string>>  $messages
-     * @param  array<string, mixed>  $headers
-     */
+    /** @param array<string, list<string>> $messages */
     public static function validation(array $messages, array $headers = []): JsonResponse
     {
         $error = ['code' => 'VALIDATION_ERROR', 'message' => 'The request parameters are invalid.'];

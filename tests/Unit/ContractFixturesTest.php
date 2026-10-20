@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use JsonException;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -12,9 +11,6 @@ use stdClass;
 
 final class ContractFixturesTest extends TestCase
 {
-    /**
-     * @throws JsonException
-     */
     #[DataProvider('fixtureProvider')]
     public function test_contract_fixture_is_valid_json(string $fixture): void
     {
@@ -24,9 +20,6 @@ final class ContractFixturesTest extends TestCase
         self::assertIsArray(json_decode($contents, true, 512, JSON_THROW_ON_ERROR));
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
     public static function fixtureProvider(): iterable
     {
         $fixtures = glob(__DIR__.'/../Fixtures/Contracts/{api,composer}/*.json', GLOB_BRACE);
@@ -43,7 +36,6 @@ final class ContractFixturesTest extends TestCase
         }
     }
 
-    /** @throws JsonException */
     public function test_composer_compatibility_examples_are_explicit(): void
     {
         $compatible = $this->decode('composer/found-v1.1-compatible.json');
@@ -54,7 +46,6 @@ final class ContractFixturesTest extends TestCase
         self::assertSame('2.0', $unsupported['schemaVersion']);
     }
 
-    /** @throws JsonException */
     public function test_raw_payload_fixture_distinguishes_objects_from_arrays(): void
     {
         $contents = file_get_contents(
@@ -70,7 +61,6 @@ final class ContractFixturesTest extends TestCase
         self::assertInstanceOf(stdClass::class, $response->rawPayload->metadata);
     }
 
-    /** @throws JsonException */
     public function test_empty_api_example_has_a_successful_empty_collection(): void
     {
         $response = $this->decode('api/empty-success.json');
@@ -79,7 +69,6 @@ final class ContractFixturesTest extends TestCase
         self::assertSame(0, $response['meta']['count']);
     }
 
-    /** @throws JsonException */
     public function test_validation_example_has_the_fixed_error_shape(): void
     {
         $response = $this->decode('api/validation-error.json');
@@ -91,11 +80,6 @@ final class ContractFixturesTest extends TestCase
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     *
-     * @throws JsonException
-     */
     private function decode(string $path): array
     {
         $contents = file_get_contents(__DIR__.'/../Fixtures/Contracts/'.$path);

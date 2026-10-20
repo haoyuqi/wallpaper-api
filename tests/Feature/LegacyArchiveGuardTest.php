@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use Illuminate\Support\Facades\Artisan;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use SplFileInfo;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
@@ -98,10 +97,6 @@ final class LegacyArchiveGuardTest extends TestCase
         self::assertSame(1, $trackedPrecedenceCheck->getExitCode(), 'Tracked archive files must remain tracked despite the ignore rule.');
     }
 
-    /**
-     * @param  list<string>  $extensions
-     * @return list<string>
-     */
     private function filesWithExtensions(string $directory, array $extensions): array
     {
         $files = [];
@@ -109,7 +104,6 @@ final class LegacyArchiveGuardTest extends TestCase
             new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)
         );
 
-        /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
             if (! $file->isFile() || ! in_array($file->getExtension(), $extensions, true)) {
                 continue;

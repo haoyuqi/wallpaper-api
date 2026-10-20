@@ -13,27 +13,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property string $id
- * @property string $source
- * @property string $source_item_id
- * @property string $market
- * @property CarbonImmutable $source_date
- * @property ?string $title
- * @property ?string $copyright_text
- * @property ?string $copyright_link
- * @property string $image_url
- * @property ?string $download_url
- * @property string $schema_version
- * @property string $raw_payload
- * @property CarbonImmutable $retrieved_at
- * @property ?CarbonImmutable $created_at
- * @property ?CarbonImmutable $updated_at
- */
+/** @property CarbonImmutable $source_date */
 #[UseFactory(WallpaperFactory::class)]
 class Wallpaper extends Model
 {
-    /** @use HasFactory<WallpaperFactory> */
     use HasFactory, HasUlids;
 
     protected $fillable = [
@@ -59,7 +42,6 @@ class Wallpaper extends Model
         ];
     }
 
-    /** @return Attribute<CarbonImmutable, DateTimeInterface|string> */
     protected function retrievedAt(): Attribute
     {
         return Attribute::make(
@@ -67,7 +49,6 @@ class Wallpaper extends Model
         );
     }
 
-    /** @return Attribute<CarbonImmutable, DateTimeInterface|string> */
     protected function sourceDate(): Attribute
     {
         return Attribute::make(
