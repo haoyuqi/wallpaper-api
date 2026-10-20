@@ -12,7 +12,9 @@ its `v3` tags are unrelated to this API's release numbering.
 4. Review README translations, the v1 contract, architecture and operating references against the final code. Record any known limitations in release notes.
 5. Review [CHANGELOG](../CHANGELOG.md), rename the pending section to the version and publication date in the release PR, then verify the final merged commit again.
 
-CI runs on PRs, `master`, and manual dispatch. Base image tags can change, so
+CI runs on PRs, `master`, manual dispatch, and daily at 23:00 UTC
+(07:00 Asia/Shanghai the following day). Scheduled runs use the default branch;
+GitHub may delay their start. Base image tags can change, so
 record the tested application image digest for actual deployment. CI does not
 push images, create tags, or commit wallpaper data. A tag push alone does not
 prove that the release passed CI.
