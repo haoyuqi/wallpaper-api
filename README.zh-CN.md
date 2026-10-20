@@ -105,4 +105,4 @@ PostgreSQL 测试配置见 [贡献指南](CONTRIBUTING.md)，命名和可读性�
 项目代码采用 [MIT 许可证](LICENSE)。第三方图片和来源内容保留各自的权利，
 代码许可证不授予这些内容的使用权。
 
-`storage/bing-wallpaper/` 中的历史壁纸作为归档保留。API 运行时不会读取或修改该归档。
+`storage/bing-wallpaper/` 中的历史壁纸作为归档保留。API 运行时不会读取或修改该归档，且 `.gitignore` 已忽略 `storage/bing-wallpaper/` 下的新文件，防止本地运行或 CI 误提交新的壁纸图片。
