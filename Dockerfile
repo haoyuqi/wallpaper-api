@@ -46,6 +46,7 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/production.ini
 COPY --from=dependencies /var/www/html/vendor vendor
 COPY --from=dependencies /var/www/html/bootstrap bootstrap
+COPY composer.json composer.lock LICENSE ./
 COPY app app
 COPY config config
 COPY database/migrations database/migrations
