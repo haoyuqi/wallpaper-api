@@ -62,7 +62,7 @@ final class LegacyArchiveGuardTest extends TestCase
         }
     }
 
-    public function test_new_wallpaper_images_are_ignored_while_tracked_archive_remains_intact(): void
+    public function test_wallpaper_images_are_ignored_and_no_legacy_pngs_are_tracked(): void
     {
         $gitignore = (string) file_get_contents(base_path('.gitignore'));
 
@@ -84,16 +84,7 @@ final class LegacyArchiveGuardTest extends TestCase
 
         self::assertTrue($trackedArchive->isSuccessful());
         $trackedFiles = array_values(array_filter(explode("\n", trim($trackedArchive->getOutput()))));
-        // WAPI-10 retains the 321 legacy PNG files; update this assertion and the tracked-precedence check if WAPI-12 removes the archive.
-        self::assertCount(321, $trackedFiles);
-
-        $trackedPrecedenceCheck = new Process(
-            ['git', 'check-ignore', $trackedFiles[0]],
-            base_path()
-        );
-        $trackedPrecedenceCheck->run();
-
-        self::assertSame(1, $trackedPrecedenceCheck->getExitCode(), 'Tracked archive files must remain tracked despite the ignore rule.');
+        self::assertSame([], $trackedFiles, 'Legacy PNGs must remain outside the current tracked tree.');
     }
 
     /**

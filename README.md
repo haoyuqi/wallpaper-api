@@ -145,7 +145,9 @@ Project code is licensed under the [MIT license](LICENSE). Third-party images
 and source content retain their respective rights; the code license does not
 grant rights to them.
 
-Historical wallpaper images under `storage/bing-wallpaper/` are retained as an
-archive. The API runtime does not read or modify that archive, and `.gitignore`
-ignores any new files under `storage/bing-wallpaper/` so local runs and CI cannot
-stage new wallpaper images.
+The 321 historical PNGs were removed from the current tree. They remain available
+under the [archive/legacy-wallpapers tag](https://github.com/haoyuqi/wallpaper-api/tree/archive/legacy-wallpapers/storage/bing-wallpaper).
+See the [archive manifest and recovery instructions](docs/archive/README.md).
+Git history is unchanged, so a full clone still includes the historical image
+objects. The API does not use these files; `.gitignore` continues to ignore new
+files under `storage/bing-wallpaper/`.

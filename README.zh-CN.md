@@ -134,4 +134,8 @@ CI 还会验证生产容器；自动化检查不会请求真实 Bing。
 项目代码采用 [MIT 许可证](LICENSE)。第三方图片和来源内容保留各自的权利，
 代码许可证不授予这些内容的使用权。
 
-`storage/bing-wallpaper/` 中的历史壁纸作为归档保留。API 运行时不会读取或修改该归档，且 `.gitignore` 已忽略 `storage/bing-wallpaper/` 下的新文件，防止本地运行或 CI 误提交新的壁纸图片。
+当前目录已移除全部 321 张历史 PNG，可通过
+[archive/legacy-wallpapers 标签](https://github.com/haoyuqi/wallpaper-api/tree/archive/legacy-wallpapers/storage/bing-wallpaper)
+查看。清单与恢复方法见[归档说明](docs/archive/README.md)。
+Git 历史没有改写，因此完整克隆仍会包含历史图片对象。API 不依赖这些图片，
+`.gitignore` 继续忽略 `storage/bing-wallpaper/` 下的新文件。

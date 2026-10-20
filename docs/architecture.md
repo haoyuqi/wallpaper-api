@@ -21,7 +21,7 @@ in issues, PRs or the private Project.
 | CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [public API controls](operations/public-api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
 | Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [deployment runbook](operations/deployment.md), [release checklist](release.md) | [Container smoke checks](../scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
-| Repository-level archive and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
+| Repository-level archive and workflow guards | [.gitignore](../.gitignore), [archive recovery](archive/README.md), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
 Navigation does not replace reading the implementation and its callers.
