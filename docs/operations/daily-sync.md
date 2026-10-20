@@ -87,3 +87,7 @@ failed scheduled event. Success and `not_found` remain successful events.
 
 No monitoring provider, alerts, deployment, queues, image download or Composer
 scheduling logic is included.
+
+For container startup, runtime secrets, persistent storage and scheduler wiring,
+see the [deployment runbook](deployment.md). The production image runs only the
+web server; scheduler execution must be configured separately.

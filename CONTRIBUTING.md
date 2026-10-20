@@ -11,8 +11,11 @@ contract or major features before implementing them.
 | Installation, runtime requirements and commands | [README](README.md#getting-started) |
 | Feature implementations and tests | [Architecture and feature map](docs/architecture.md) |
 | Naming, types and readability | [Code style](docs/code-style.md) |
+| Public API usage and examples | [API reference](docs/api.md) |
 | HTTP and Composer protocols | [v1 contract](docs/contracts/v1.md) |
 | Scheduling, locks, logs and recovery | [Daily synchronization](docs/operations/daily-sync.md) |
+| Container, backups and rollback | [Deployment runbook](docs/operations/deployment.md) |
+| Code publication gates | [Release checklist](docs/release.md) |
 | Reading order for coding agents | [AGENTS.md](AGENTS.md) |
 
 ## Change requirements
@@ -47,7 +50,9 @@ Run from the repository root:
 ```bash
 composer validate --strict
 vendor/bin/pint --test
+vendor/bin/phpstan analyse --no-progress --memory-limit=512M
 vendor/bin/phpunit
+composer audit --locked --no-interaction
 ```
 
 Use `vendor/bin/pint` to fix formatting. Follow [code style](docs/code-style.md).
@@ -55,6 +60,15 @@ Documentation-only changes require link, example and formatting checks rather
 than another application test run. Test observable behavior without locking down
 unrelated implementation details. Record real Bing integration checks separately
 and state whether they were performed.
+
+Larastan level 5 covers application code, routes, bootstrap configuration and
+database definitions without a baseline or ignored-error list. Fix findings
+rather than lowering the level to make CI pass. Dependencies are locked; audit
+both production and development packages. CI also builds the production image
+from a clean context and exercises migrations and HTTP behavior on PostgreSQL 18.
+Run `bash scripts/smoke-container.sh <container-name>` only against a disposable
+test container/database: it intentionally rolls back tables. Docker production
+builds are separate from the contributor's normal PHP development environment.
 
 The default suite uses isolated in-memory SQLite and makes no Bing requests.
 PostgreSQL-specific tests require PostgreSQL 18 and the PDO PostgreSQL extension.

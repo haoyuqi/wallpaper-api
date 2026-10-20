@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 07:00 Asia/Shanghai (23:00 UTC on the previous day).
+    - cron: '0 23 * * *'
   push:
     branches:
       - master
@@ -10,6 +14,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -45,6 +53,16 @@ jobs:
 
       - name: Run Pint
         run: vendor/bin/pint --test
+
+      - name: Run Larastan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: testing
+          CACHE_STORE: array
+
+      - name: Audit locked dependencies
+        run: composer audit --locked --no-interaction
 
   test:
     name: PHPUnit (PHP ${{ matrix.php }})
@@ -129,3 +147,51 @@ jobs:
 
       - name: Verify migration rollback
         run: php artisan migrate:rollback --force
+
+  container:
+    name: Production container smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: wallpaper_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: wallpaper_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U wallpaper_test -d wallpaper_smoke"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build production image from the lockfile
+        run: docker build --pull --tag wallpaper-api:smoke .
+
+      - name: Start a disposable production container
+        run: |
+          export APP_KEY="base64:$(openssl rand -base64 32)"
+          docker run --detach --name wallpaper-smoke --network host \
+            --env APP_KEY --env DB_CONNECTION=pgsql --env DB_HOST=127.0.0.1 \
+            --env DB_PORT=5432 --env DB_DATABASE=wallpaper_smoke \
+            --env DB_USERNAME=wallpaper_test --env DB_PASSWORD= \
+            --env DB_SSLMODE=disable wallpaper-api:smoke
+
+      - name: Verify migrations, cached boot, queries and safe failures
+        run: bash scripts/smoke-container.sh wallpaper-smoke
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          if docker container inspect wallpaper-smoke >/dev/null 2>&1; then
+            docker logs wallpaper-smoke
+          fi
+
+      - name: Remove disposable container
+        if: always()
+        run: docker rm --force wallpaper-smoke || true

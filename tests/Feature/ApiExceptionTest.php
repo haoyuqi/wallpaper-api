@@ -117,6 +117,13 @@ final class ApiExceptionTest extends TestCase
 
         $this->getJson('/api/test-error')->assertStatus(500)
             ->assertExactJson(['error' => ['code' => 'INTERNAL_ERROR', 'message' => 'An internal error occurred.']]);
+        Log::shouldHaveReceived('error')->once()->withArgs(function (string $message, array $context): bool {
+            self::assertSame('API request failed.', $message);
+            self::assertSame('INTERNAL_ERROR', $context['error_code']);
+            self::assertSame(RuntimeException::class, $context['exception_type']);
+
+            return true;
+        });
     }
 
     public function test_framework_validation_errors_do_not_echo_unreviewed_messages(): void

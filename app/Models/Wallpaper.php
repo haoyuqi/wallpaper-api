@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/** @property CarbonImmutable $source_date */
 #[UseFactory(WallpaperFactory::class)]
 class Wallpaper extends Model
 {
