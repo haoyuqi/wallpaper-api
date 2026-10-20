@@ -10,8 +10,8 @@ SQLite remains supported for local use and tests.
 The [Dockerfile](../../Dockerfile) uses the official PHP Apache image and a
 multi-stage Composer install from `composer.lock`. The final image runs as
 `www-data` on port 8080, includes no development dependencies or application
-`.env`, and serves only `public/`. The historical image archive and personal
-files are excluded from the build context. Source files are root-owned; only
+`.env`, and serves only `public/`. Personal files are excluded from the build
+context. Source files are root-owned; only
 `storage` and `bootstrap/cache` need application write access.
 
 On an authorized build host:
@@ -178,9 +178,8 @@ the affected content and the requester's basis for acting. Keep personal details
 in private correspondence. Review the request, disable affected public metadata
 where appropriate, and prevent scheduled reintroduction while resolving it
 (pause synchronization if necessary). Retain a minimal private decision record
-and provide an outcome. Third-party image URLs and historical Git objects may
-remain outside the running service; do not promise their removal from Bing or
-other copies. Historical archive deletion is a separate maintenance action.
+and provide an outcome. Third-party images remain outside the running service;
+do not promise their removal from Bing or other copies.
 
 Use the [security policy](../../SECURITY.md) for vulnerabilities and the
 [release checklist](../release.md) for code publication. Actual hosting, account,

@@ -96,7 +96,7 @@ configuration, locks, failure logs and recovery.
 ## Production and releases
 
 The [production image](Dockerfile) runs PHP 8.4 with Apache as a non-root user
-on port 8080. It excludes secrets, development dependencies and archived images;
+on port 8080. It excludes secrets and development dependencies;
 it does not start a scheduler or migrate automatically. CI builds the image and
 checks it against a disposable PostgreSQL 18 database.
 
@@ -139,15 +139,8 @@ automated checks do not call live Bing.
 - [Issues](https://github.com/haoyuqi/wallpaper-api/issues): bug reports, questions and proposals
 - [Contributing](CONTRIBUTING.md): development setup and pull requests
 
-## License and archived images
+## License
 
 Project code is licensed under the [MIT license](LICENSE). Third-party images
 and source content retain their respective rights; the code license does not
 grant rights to them.
-
-The 321 historical PNGs were removed from the current tree. They remain available
-under the [archive/legacy-wallpapers tag](https://github.com/haoyuqi/wallpaper-api/tree/archive/legacy-wallpapers/storage/bing-wallpaper).
-See the [archive manifest and recovery instructions](docs/archive/README.md).
-Git history is unchanged, so a full clone still includes the historical image
-objects. The API does not use these files; `.gitignore` continues to ignore new
-files under `storage/bing-wallpaper/`.

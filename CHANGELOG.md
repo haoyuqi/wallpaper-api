@@ -11,9 +11,7 @@
 - Add configurable credential-free CORS and per-IP request limits, safe API
   errors and structured failure logs. Anonymous exception names do not disclose
   their source paths in application logs.
-- Disable the legacy downloader/README generator and remove the 321 historical
-  PNGs from the current tree. Preserve them at `archive/legacy-wallpapers` with a
-  recovery manifest, without rewriting Git history; prevent new tracked images.
+- Remove the legacy image downloader and README generator.
 - Provide a non-root PHP Apache production image, PostgreSQL container smoke
   checks, Larastan analysis and dependency auditing in CI.
 - Document architecture, contribution rules, public API controls, deployment,
