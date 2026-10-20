@@ -20,6 +20,7 @@ in issues, PRs or the private Project.
 | Safe errors and logs | [bootstrap/app.php](../bootstrap/app.php), [NormalizeApiErrors](../app/Http/Middleware/NormalizeApiErrors.php), [ApiErrorResponse](../app/Http/Responses/ApiErrorResponse.php) | [ApiExceptionTest](../tests/Feature/ApiExceptionTest.php) |
 | CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [public API controls](operations/public-api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
+| Repository-level archive and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
 Navigation does not replace reading the implementation and its callers.

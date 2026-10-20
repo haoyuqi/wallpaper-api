@@ -113,4 +113,6 @@ and source content retain their respective rights; the code license does not
 grant rights to them.
 
 Historical wallpaper images under `storage/bing-wallpaper/` are retained as an
-archive. The API runtime does not read or modify that archive.
+archive. The API runtime does not read or modify that archive, and `.gitignore`
+ignores any new files under `storage/bing-wallpaper/` so local runs and CI cannot
+stage new wallpaper images.
