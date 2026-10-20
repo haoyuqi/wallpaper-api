@@ -6,7 +6,7 @@ its `v3` tags are unrelated to this API's release numbering.
 
 ## Required gates
 
-1. Merge reviewed code through a PR. Confirm WAPI-09 and WAPI-10 are complete; retain the historical archive unless a separate deletion task is approved.
+1. Merge reviewed code through a PR. Confirm WAPI-09 and WAPI-10 are complete. WAPI-12 removes the legacy PNGs after explicit approval; verify its [archival tag and manifest](archive/README.md) before releasing the cleaned tree.
 2. Verify the exact release commit is on `master` with no uncommitted changes. Run the full CI workflow on that commit, including PHP 8.4 lint/static analysis/audit, SQLite, PostgreSQL 18 and the production-container smoke test.
 3. Inspect the container smoke result: non-root execution, isolated migrations and rollback, cached boot, health, public query contract, CORS/limit headers and sanitized database failure. It makes no live Bing requests.
 4. Review README translations, the v1 contract, architecture and operating references against the final code. Record any known limitations in release notes.
