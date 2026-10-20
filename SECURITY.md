@@ -1,8 +1,8 @@
 # Security policy
 
 Security fixes target the latest maintained code on `master` and the current
-stable release. Historical image archives and older application versions are not
-maintained runtimes. Use PHP 8.4 and keep deployed images and dependencies updated.
+stable release. Older application versions are not maintained runtimes.
+Use PHP 8.4 and keep deployed images and dependencies updated.
 
 Do not disclose credentials, database dumps, personal data, sensitive logs or
 exploit details in a public issue. If GitHub's private vulnerability reporting

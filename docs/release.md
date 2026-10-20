@@ -1,12 +1,12 @@
 # Code release checklist
 
-The planned first code release is `v1.0.0`. This checklist does not deploy the
-service or publish a container image. The Composer package has its own version;
+This checklist covers code releases. It does not deploy the service or publish
+a container image. The Composer package has its own version;
 its `v3` tags are unrelated to this API's release numbering.
 
 ## Required gates
 
-1. Merge reviewed code through a PR. Confirm WAPI-09 and WAPI-10 are complete. WAPI-12 removes the legacy PNGs after explicit approval; verify its [archival tag and manifest](archive/README.md) before releasing the cleaned tree.
+1. Merge reviewed code through a PR. Confirm the intended release scope is complete.
 2. Verify the exact release commit is on `master` with no uncommitted changes. Run the full CI workflow on that commit, including PHP 8.4 lint/static analysis/audit, SQLite, PostgreSQL 18 and the production-container smoke test.
 3. Inspect the container smoke result: non-root execution, isolated migrations and rollback, cached boot, health, public query contract, CORS/limit headers and sanitized database failure. It makes no live Bing requests.
 4. Review README translations, the v1 contract, architecture and operating references against the final code. Record any known limitations in release notes.
@@ -31,18 +31,20 @@ gh run list --workflow ci.yml --branch master
 ```
 
 Inspect the successful run's head SHA and confirm it equals `git rev-parse HEAD`.
-Never move an existing published tag to different code. Create an annotated tag
-and a GitHub Release with notes describing the API, requirements and limitations:
+Never move an existing published tag to different code. Set the intended new
+version below, then create an annotated tag and a GitHub Release with notes
+describing the API, requirements and limitations:
 
 ```bash
-git tag -a v1.0.0 -m "Wallpaper API v1.0.0"
-git push origin v1.0.0
-gh release create v1.0.0 --verify-tag --title "Wallpaper API v1.0.0" \
+release_version=vX.Y.Z
+git tag -a "$release_version" -m "Wallpaper API $release_version"
+git push origin "$release_version"
+gh release create "$release_version" --verify-tag --title "Wallpaper API $release_version" \
   --notes-file CHANGELOG.md
 ```
 
 The tag identifies the commit; the Release adds the human-readable announcement.
-Close WAPI-11 only after the release exists and references the verified tag.
+Close the release task only after the release exists and references the verified tag.
 Deployment remains a separate operational task. Version changes follow semantic
 versioning; changes to frozen public fields/date semantics require explicit
 compatibility review. Document a correction in a new release rather than silently

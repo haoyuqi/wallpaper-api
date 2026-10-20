@@ -88,7 +88,7 @@ php artisan schedule:list
 ## 生产环境与发布
 
 [生产镜像](Dockerfile) 使用 PHP 8.4 和 Apache，以非 root 用户运行并监听 8080。
-镜像不包含凭据、开发依赖和历史图片，不会自动启动调度器或执行迁移。
+镜像不包含凭据和开发依赖，不会自动启动调度器或执行迁移。
 CI 会构建镜像，并通过隔离的 PostgreSQL 18 数据库进行冒烟验证。
 
 运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份恢复和版本回滚见
@@ -129,13 +129,7 @@ CI 还会验证生产容器；自动化检查不会请求真实 Bing。
 - [Issues](https://github.com/haoyuqi/wallpaper-api/issues)：缺陷报告、问题和建议
 - [贡献指南](CONTRIBUTING.md)：开发设置和 Pull Request
 
-## 许可证与历史图片
+## 许可证
 
 项目代码采用 [MIT 许可证](LICENSE)。第三方图片和来源内容保留各自的权利，
 代码许可证不授予这些内容的使用权。
-
-当前目录已移除全部 321 张历史 PNG，可通过
-[archive/legacy-wallpapers 标签](https://github.com/haoyuqi/wallpaper-api/tree/archive/legacy-wallpapers/storage/bing-wallpaper)
-查看。清单与恢复方法见[归档说明](docs/archive/README.md)。
-Git 历史没有改写，因此完整克隆仍会包含历史图片对象。API 不依赖这些图片，
-`.gitignore` 继续忽略 `storage/bing-wallpaper/` 下的新文件。
