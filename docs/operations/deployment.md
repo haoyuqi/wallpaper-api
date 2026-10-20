@@ -92,7 +92,11 @@ public HTTPS entry point. Empty valid results return 200; invalid dates return
 source availability, recent synchronization or backup health.
 
 The [container smoke script](../../scripts/smoke-container.sh) verifies real web
-requests, migrations, cached boot and safe database failures in CI. It rolls back
+requests, migrations, cached boot and safe database failures in CI. After checking
+an empty result, it copies a dedicated Seeder and expected JSON fixture into the
+disposable container, runs `db:seed`, and checks a populated HTTP 200 response
+against the complete public contract example. These test files are excluded from
+the production image; no live Bing request is made. It rolls back
 tables and **must never run against production or a shared database**.
 
 ## Scheduler and synchronization

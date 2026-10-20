@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Run only against a disposable CI container and database, never production.
 container_name=${1:?Pass the disposable container name}
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 smoke_url=http://127.0.0.1:8080
 smoke_dir=$(mktemp -d)
 trap 'rm -f "$smoke_dir/body.json" "$smoke_dir/headers"; rmdir "$smoke_dir"' EXIT
@@ -11,6 +12,7 @@ test "$(docker exec "$container_name" id -u)" != 0
 docker exec "$container_name" test ! -e .env
 docker exec "$container_name" test ! -d storage/bing-wallpaper
 docker exec "$container_name" test ! -e vendor/bin/phpunit
+docker exec "$container_name" test ! -e database/seeders/SmokeTestSeeder.php
 docker exec "$container_name" test ! -w bootstrap/app.php
 docker exec "$container_name" test -w bootstrap/cache
 docker exec "$container_name" php artisan migrate --force --no-interaction
@@ -32,6 +34,23 @@ $body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
 if ($body !== ["data" => [], "meta" => ["query" => ["date" => null, "from" => "0001-01-01", "to" => "9999-12-31"], "count" => 0]]) {
     exit(1);
 }
+' < "$smoke_dir/body.json"
+
+# Seed only the disposable container; neither file belongs in the production image.
+docker cp "$project_dir/database/seeders/SmokeTestSeeder.php" "$container_name:/tmp/SmokeTestSeeder.php"
+docker cp "$project_dir/tests/Fixtures/Contracts/api/exact-date-success.json" "$container_name:/tmp/exact-date-success.json"
+# Explicitly load the CI-only seeder because the image has an authoritative classmap.
+docker exec "$container_name" php -r '
+require "vendor/autoload.php";
+require "/tmp/SmokeTestSeeder.php";
+require "artisan";
+' -- db:seed --class='Database\Seeders\SmokeTestSeeder' --force --no-interaction
+
+test "$(curl --silent --output "$smoke_dir/body.json" --write-out '%{http_code}' "$smoke_url/api/v1/wallpapers?date=2026-08-31")" = 200
+docker exec -i "$container_name" php -r '
+$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+$expected = json_decode(file_get_contents("/tmp/exact-date-success.json"), true, 512, JSON_THROW_ON_ERROR);
+exit($body === $expected ? 0 : 1);
 ' < "$smoke_dir/body.json"
 
 test "$(curl --silent --output "$smoke_dir/body.json" --write-out '%{http_code}' "$smoke_url/api/v1/wallpapers?date=invalid")" = 422
