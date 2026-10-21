@@ -23,6 +23,10 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="testing" force="true"/>
         <env name="DB_URL" value="" force="true"/>
+        <env name="TEST_DB_CONNECTION" value="pgsql"/>
+        <env name="TEST_DB_HOST" value="postgres"/>
+        <env name="TEST_DB_PORT" value="5432"/>
+        <env name="TEST_DB_DATABASE" value="wallpaper_api_test"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
     </php>
