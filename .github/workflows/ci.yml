@@ -98,6 +98,9 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit
+        env:
+          TEST_DB_CONNECTION: sqlite
+          TEST_DB_DATABASE: ':memory:'
 
   postgres-test:
     name: PostgreSQL persistence (PHP 8.4)

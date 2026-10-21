@@ -117,11 +117,10 @@ composer audit --locked --no-interaction
 ```
 
 The local `.env` is ignored by Git. Copy `.env.example` to `.env`, then supply
-the password for a dedicated PostgreSQL test role under `TEST_DB_PASSWORD`.
-PHPUnit selects the `testing` connection and reads these `TEST_DB_*` values from
-`.env`; no `.env.testing` file is required. Without these values, the testing
-connection falls back to in-memory SQLite and skips PostgreSQL-only assertions.
-CI runs both databases on PHP 8.4.
+the local PostgreSQL test username and password under `TEST_DB_USERNAME` and
+`TEST_DB_PASSWORD`. `phpunit.xml` selects the `testing` connection and sets its
+shared PostgreSQL defaults; no `.env.testing` file is required. CI explicitly
+selects SQLite for its quick test job and PostgreSQL 18 for persistence tests.
 See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
 and [code style](docs/code-style.md) for naming and readability conventions.
 Pint uses the Laravel preset and does not enforce strict typing declarations.

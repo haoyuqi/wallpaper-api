@@ -39,9 +39,9 @@ Preserve existing changes. Concurrent writing sessions should use separate
 working directories. Personal environment details belong in local instructions.
 Follow the [documentation maintenance rules](docs/architecture.md#documentation-maintenance).
 
-Keep credentials and personal environment files out of commits. The tracked
-`.env.testing` is shared test configuration, not a place for private credentials.
-Pass PostgreSQL test credentials through environment variables.
+Keep credentials and personal environment files out of commits. PHPUnit's
+shared database defaults belong in `phpunit.xml`; set local PostgreSQL
+credentials in the Git-ignored `.env`.
 
 ## Verification
 
@@ -70,19 +70,20 @@ Run `bash scripts/smoke-container.sh <container-name>` only against a disposable
 test container/database: it intentionally rolls back tables. Docker production
 builds are separate from the contributor's normal PHP development environment.
 
-The default suite uses isolated in-memory SQLite and makes no Bing requests.
-Use PostgreSQL 18 for complete local verification, especially for migrations and
-persistence changes; SQLite is useful for a quick check but skips PostgreSQL-only
-assertions. PostgreSQL tests require the PDO PostgreSQL extension.
-Copy `.env.example` to the Git-ignored `.env` and set the dedicated test role's
-password there. Laravel reads `.env` during PHPUnit runs because this repository
-does not provide `.env.testing`; `phpunit.xml` selects the `testing` connection.
-The test connection reads these variables:
+The default local suite uses PostgreSQL and makes no Bing requests. SQLite is
+useful for a quick check but skips PostgreSQL-only assertions. PostgreSQL tests
+require the PDO PostgreSQL extension. Copy `.env.example` to the Git-ignored
+`.env` and set the local test username and password there. Laravel reads `.env`
+during PHPUnit runs because this repository does not provide `.env.testing`.
+`phpunit.xml` selects the `testing` connection and sets these non-secret values:
 
 - `TEST_DB_CONNECTION=pgsql`
 - `TEST_DB_HOST` and `TEST_DB_PORT`
-- `TEST_DB_USERNAME` and `TEST_DB_PASSWORD`
 - `TEST_DB_DATABASE=wallpaper_api_test`
+
+`TEST_DB_USERNAME` and `TEST_DB_PASSWORD` come from the ignored `.env`. CI
+overrides the connection and database for its SQLite job and supplies
+PostgreSQL settings separately.
 
 Use a dedicated local test server or an isolated CI service. The database role
 must be able to create the test database. Migrations create it if absent and

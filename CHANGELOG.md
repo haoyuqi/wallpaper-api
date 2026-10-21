@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — 2026-10-21
+
+- Add an upgrade migration for the `sync_runs` lookup index so existing
+  installations receive the index without rerunning their original migration.
+- Make PostgreSQL the default local PHPUnit database, with credentials kept in
+  the ignored `.env`, while CI continues to test both SQLite and PostgreSQL 18.
+- Simplify application scaffolding and adjust production container concurrency.
+- Refresh public documentation to describe the current API and release process.
+
+The public API and v1 JSON contract are unchanged. This release does not deploy
+infrastructure or download images.
+
 ## 1.0.0 — 2026-10-20
 
 - Rebuild the application as a Laravel 13 metadata API with PHP 8.4.
