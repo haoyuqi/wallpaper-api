@@ -12,6 +12,11 @@ its `v3` tags are unrelated to this API's release numbering.
 4. Review README translations, the v1 contract, architecture and operating references against the final code. Record any known limitations in release notes.
 5. Review [CHANGELOG](../CHANGELOG.md), rename the pending section to the version and publication date in the release PR, then verify the final merged commit again.
 
+The `master` branch requires the `CI result` check, which succeeds only when
+every CI job succeeds, and an up-to-date branch before merging. Dependabot patch
+updates may be merged automatically (see [CONTRIBUTING](../CONTRIBUTING.md#dependency-updates));
+an automatic merge is not a release, so the checklist above still applies.
+
 CI runs on PRs, `master`, manual dispatch, and daily at 23:00 UTC
 (07:00 Asia/Shanghai the following day). Scheduled runs use the default branch;
 GitHub may delay their start. Base image tags can change, so

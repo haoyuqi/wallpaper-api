@@ -209,3 +209,28 @@ jobs:
       - name: Remove disposable container
         if: always()
         run: docker rm --force wallpaper-smoke || true
+
+  result:
+    name: CI result
+    if: ${{ always() }}
+    needs: [lint, test, postgres-test, container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every check to succeed
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          POSTGRES_RESULT: ${{ needs.postgres-test.result }}
+          CONTAINER_RESULT: ${{ needs.container.result }}
+        run: |
+          echo "Code Quality & Lint: $LINT_RESULT"
+          echo "PHPUnit: $TEST_RESULT"
+          echo "PostgreSQL persistence: $POSTGRES_RESULT"
+          echo "Production container smoke test: $CONTAINER_RESULT"
+          for result in "$LINT_RESULT" "$TEST_RESULT" "$POSTGRES_RESULT" "$CONTAINER_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              echo "::error::Every required job must succeed."
+              exit 1
+            fi
+          done
