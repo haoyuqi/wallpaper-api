@@ -71,7 +71,9 @@ test container/database: it intentionally rolls back tables. Docker production
 builds are separate from the contributor's normal PHP development environment.
 
 The default suite uses isolated in-memory SQLite and makes no Bing requests.
-PostgreSQL-specific tests require PostgreSQL 18 and the PDO PostgreSQL extension.
+Use PostgreSQL 18 for complete local verification, especially for migrations and
+persistence changes; SQLite is useful for a quick check but skips PostgreSQL-only
+assertions. PostgreSQL tests require the PDO PostgreSQL extension.
 Set these environment variables for the test process:
 
 - `TEST_DB_CONNECTION=pgsql`

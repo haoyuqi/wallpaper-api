@@ -116,9 +116,10 @@ vendor/bin/phpunit
 composer audit --locked --no-interaction
 ```
 
-The default test suite uses isolated in-memory SQLite. PostgreSQL-specific tests
-are skipped in that mode. CI runs the suite with both SQLite and PostgreSQL 18
-on PHP 8.4. See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
+The default test suite uses isolated in-memory SQLite and skips PostgreSQL-specific
+assertions. For complete local verification, configure the dedicated PostgreSQL 18
+test database before running PHPUnit. CI runs both databases on PHP 8.4.
+See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
 and [code style](docs/code-style.md) for naming and readability conventions.
 Pint uses the Laravel preset and does not enforce strict typing declarations.
 Larastan checks application code, routing, bootstrap and database definitions at

@@ -17,6 +17,8 @@ Follow [code style](docs/code-style.md) when writing and reviewing code.
 ## Development and review
 
 Follow the [contributing guide](CONTRIBUTING.md) for development, verification and PR review.
+Run the complete local test suite against the dedicated PostgreSQL 18 test database;
+SQLite is a quick check and skips PostgreSQL-specific assertions.
 
 ## Contracts and scheduling
 
