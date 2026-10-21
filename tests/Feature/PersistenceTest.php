@@ -8,8 +8,10 @@ use App\Models\SyncRun;
 use App\Models\Wallpaper;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -95,6 +97,29 @@ final class PersistenceTest extends TestCase
         self::assertSame('2026-08-31T08:15:00.000000Z', $wallpaper->fresh()->retrieved_at->toISOString());
         self::assertSame('2026-08-31T08:15:00.000000Z', $run->fresh()->started_at->toISOString());
         self::assertSame('2026-08-31T09:15:00.000000Z', $run->fresh()->finished_at->toISOString());
+    }
+
+    public function test_sync_run_index_migration_upgrades_existing_tables_and_skips_an_existing_index(): void
+    {
+        $index = 'sync_runs_requested_date_status_index';
+        $migration = require database_path('migrations/2026_10_21_003906_add_requested_date_status_index_to_sync_runs_table.php');
+        $run = SyncRun::factory()->create();
+
+        self::assertTrue(Schema::hasIndex('sync_runs', $index));
+        $migration->up();
+        self::assertTrue(Schema::hasIndex('sync_runs', $index));
+
+        Schema::table('sync_runs', function (Blueprint $table) use ($index): void {
+            $table->dropIndex($index);
+        });
+
+        self::assertFalse(Schema::hasIndex('sync_runs', $index));
+        $migration->up();
+        self::assertTrue(Schema::hasIndex('sync_runs', $index));
+        self::assertSame(1, SyncRun::query()->whereKey($run->id)->count());
+
+        $migration->down();
+        self::assertFalse(Schema::hasIndex('sync_runs', $index));
     }
 
     public function test_postgresql_schema_and_session_semantics(): void
