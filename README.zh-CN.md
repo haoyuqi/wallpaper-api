@@ -106,7 +106,10 @@ vendor/bin/phpunit
 composer audit --locked --no-interaction
 ```
 
-默认测试使用隔离的内存 SQLite，此模式下会跳过 PostgreSQL 专用测试。
+本地 `.env` 不会提交到 Git。复制 `.env.example` 为 `.env`，并在
+`TEST_DB_PASSWORD` 中填写专用 PostgreSQL 测试账户的密码。PHPUnit 使用
+`testing` 连接，从 `.env` 读取 `TEST_DB_*`，无需 `.env.testing`。
+未设置这些变量时，测试连接默认使用内存 SQLite，并跳过 PostgreSQL 专用测试。
 CI 在 PHP 8.4 上分别使用 SQLite 和 PostgreSQL 18 运行测试。
 PostgreSQL 测试配置见 [贡献指南](CONTRIBUTING.md)，命名和可读性约定见
 [代码风格](docs/code-style.md)。Pint 使用 Laravel 预设，不强制添加严格类型声明。

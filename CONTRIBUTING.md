@@ -74,7 +74,10 @@ The default suite uses isolated in-memory SQLite and makes no Bing requests.
 Use PostgreSQL 18 for complete local verification, especially for migrations and
 persistence changes; SQLite is useful for a quick check but skips PostgreSQL-only
 assertions. PostgreSQL tests require the PDO PostgreSQL extension.
-Set these environment variables for the test process:
+Copy `.env.example` to the Git-ignored `.env` and set the dedicated test role's
+password there. Laravel reads `.env` during PHPUnit runs because this repository
+does not provide `.env.testing`; `phpunit.xml` selects the `testing` connection.
+The test connection reads these variables:
 
 - `TEST_DB_CONNECTION=pgsql`
 - `TEST_DB_HOST` and `TEST_DB_PORT`

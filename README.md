@@ -116,9 +116,12 @@ vendor/bin/phpunit
 composer audit --locked --no-interaction
 ```
 
-The default test suite uses isolated in-memory SQLite and skips PostgreSQL-specific
-assertions. For complete local verification, configure the dedicated PostgreSQL 18
-test database before running PHPUnit. CI runs both databases on PHP 8.4.
+The local `.env` is ignored by Git. Copy `.env.example` to `.env`, then supply
+the password for a dedicated PostgreSQL test role under `TEST_DB_PASSWORD`.
+PHPUnit selects the `testing` connection and reads these `TEST_DB_*` values from
+`.env`; no `.env.testing` file is required. Without these values, the testing
+connection falls back to in-memory SQLite and skips PostgreSQL-only assertions.
+CI runs both databases on PHP 8.4.
 See [contributing](CONTRIBUTING.md) for PostgreSQL test configuration
 and [code style](docs/code-style.md) for naming and readability conventions.
 Pint uses the Laravel preset and does not enforce strict typing declarations.
