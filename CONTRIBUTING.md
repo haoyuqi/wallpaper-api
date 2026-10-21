@@ -105,6 +105,22 @@ pass/skip counts, and checks not run or failing with reasons. After new commits,
 repeat affected checks. Cancelled or incomplete CI is not a pass; investigate
 known failures rather than rerunning them repeatedly and claiming a fix.
 
+## Dependency updates
+
+Dependabot security updates open pull requests against `master`. A patch update
+that only changes `composer.json` and `composer.lock` gets squash auto-merge from
+[the auto-merge workflow](.github/workflows/dependabot-auto-merge.yml); GitHub
+merges it after the required `CI result` check passes and the branch is up to
+date. Minor, major, pre-release and unrecognized updates stay open for manual
+review. If a pull request later stops matching, the workflow disables its
+auto-merge. Merging changes only the code: it does not tag, release or deploy.
+Turn off **Allow auto-merge** in the repository settings to stop all automatic
+merging.
+
+This workflow is the one exception to the read-only workflow rule: it needs
+`contents: write` to enable auto-merge, runs on `pull_request_target`, and must
+never check out or execute pull request code. A guard test enforces both limits.
+
 ## Issues and pull requests
 
 Include reproducible steps, expected and actual behavior, and relevant runtime

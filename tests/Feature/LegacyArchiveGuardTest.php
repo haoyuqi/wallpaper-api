@@ -56,7 +56,15 @@ final class LegacyArchiveGuardTest extends TestCase
             $contents = (string) file_get_contents($filePath);
 
             self::assertMatchesRegularExpression('/permissions:\s+contents:\s*read\b/', $contents, "Workflow {$filePath} must declare read-only contents permission.");
-            self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', $contents, "Workflow {$filePath} must not request contents write permission.");
+
+            if (basename($filePath) === 'dependabot-auto-merge.yml') {
+                // GitHub needs job-level contents: write to enable auto-merge. This is the only
+                // allowed exception and it must never check out or execute pull request code.
+                self::assertStringNotContainsString('actions/checkout', $contents, "Workflow {$filePath} is privileged and must not check out code.");
+            } else {
+                self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', $contents, "Workflow {$filePath} must not request contents write permission.");
+            }
+
             self::assertDoesNotMatchRegularExpression('/\bgit\s+(commit|push)\b/', $contents, "Workflow {$filePath} must not commit or push repository changes.");
             self::assertStringNotContainsString('download:bing-wallpaper', $contents);
             self::assertStringNotContainsString('update:readme', $contents);
