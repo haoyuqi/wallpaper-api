@@ -1059,16 +1059,16 @@
         },
         {
             "name": "haoyuqi/download-bing-wallpaper",
-            "version": "3.0.0",
+            "version": "3.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/haoyuqi/download-bing-wallpaper",
-                "reference": "47818315ea9e189c569d405479a81f71dc2239f6"
+                "url": "https://github.com/haoyuqi/download-bing-wallpaper.git",
+                "reference": "8729871589280a4c97b78f3aacc62f3f45d50e98"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/haoyuqi/download-bing-wallpaper/zipball/47818315ea9e189c569d405479a81f71dc2239f6",
-                "reference": "47818315ea9e189c569d405479a81f71dc2239f6",
+                "url": "https://api.github.com/repos/haoyuqi/download-bing-wallpaper/zipball/8729871589280a4c97b78f3aacc62f3f45d50e98",
+                "reference": "8729871589280a4c97b78f3aacc62f3f45d50e98",
                 "shasum": ""
             },
             "require": {
@@ -1083,7 +1083,7 @@
                 "laravel/pint": "^1.30",
                 "orchestra/testbench": "^11.0",
                 "phpstan/phpstan": "^2.2",
-                "phpunit/phpunit": "^12.5"
+                "phpunit/phpunit": "^12.5.8"
             },
             "type": "library",
             "extra": {
@@ -1123,7 +1123,7 @@
                 "issues": "https://github.com/haoyuqi/download-bing-wallpaper/issues",
                 "source": "https://github.com/haoyuqi/download-bing-wallpaper"
             },
-            "time": "2026-09-03T14:35:56+00:00"
+            "time": "2026-10-22T10:42:09+00:00"
         },
         {
             "name": "laravel/framework",
