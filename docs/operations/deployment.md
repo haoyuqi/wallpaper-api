@@ -6,6 +6,11 @@ Use PHP 8.4.x at 8.4.27 or later and PostgreSQL 18, an HTTPS entry point, and
 one scheduler host. The production Docker image follows the PHP 8.4 tag and
 fails its build if the resolved runtime is below 8.4.27.
 SQLite remains supported for local use and tests.
+For non-Docker production deployments, use PHP 8.4.x at 8.4.27 or later, or
+PHP 8.5.x at 8.5.12 or later within PHP 8.x. After installing production
+dependencies, run `composer check-platform-reqs --no-dev` with the actual PHP
+executable that will serve the application. This check ignores Composer's
+`config.platform` simulation and verifies the real runtime.
 
 ## Build and runtime
 

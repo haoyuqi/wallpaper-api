@@ -31,6 +31,7 @@ the commands below from the repository root in that environment.
 git clone https://github.com/haoyuqi/wallpaper-api.git
 cd wallpaper-api
 composer install
+composer check-platform-reqs
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
@@ -107,6 +108,8 @@ checks it against a disposable PostgreSQL 18 database.
 
 Follow the [deployment runbook](docs/operations/deployment.md) for runtime secrets,
 TLS/proxies, persistent locks, migrations, health checks, backups and rollback.
+For non-Docker production deployments, run `composer install --no-dev` and
+`composer check-platform-reqs --no-dev` with the production PHP executable.
 `/up` confirms application boot, not database availability or synchronization
 freshness. Actual hosting and resource provisioning are separate from the code
 release. See [release gates](docs/release.md) and [CHANGELOG](CHANGELOG.md).
