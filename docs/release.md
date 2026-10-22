@@ -17,8 +17,8 @@ every CI job succeeds, and an up-to-date branch before merging. Dependabot patch
 updates may be merged automatically (see [CONTRIBUTING](../CONTRIBUTING.md#dependency-updates));
 an automatic merge is not a release, so the checklist above still applies.
 
-CI runs on PRs, `master`, manual dispatch, and daily at 23:00 UTC
-(07:00 Asia/Shanghai the following day). Scheduled runs use the default branch;
+CI runs on PRs, `master`, manual dispatch, and daily at 19:34 UTC
+(03:34 Asia/Shanghai the following day). Scheduled runs use the default branch;
 GitHub may delay their start. Base image tags can change, so
 record the tested application image digest for actual deployment. CI does not
 push images, create tags, or commit wallpaper data. A tag push alone does not
