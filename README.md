@@ -1,6 +1,7 @@
 # Wallpaper API
 
 [![CI](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhaoyuqi%2Fwallpaper-api%2Fcoverage-badge%2Fcoverage.json)](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml?query=branch%3Amaster)
 [![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/haoyuqi/wallpaper-api)](https://github.com/haoyuqi/wallpaper-api/releases/latest)
@@ -128,9 +129,8 @@ Larastan checks application code, routing, bootstrap and database definitions at
 level 5 without an ignored-error baseline. CI also tests the production container;
 automated checks do not call live Bing.
 
-Line coverage for `app/`: **99.39%**, measured by the SQLite PHPUnit job in the
-[CI run on 2026-10-22](https://github.com/haoyuqi/wallpaper-api/actions/runs/39708656415)
-(required minimum: 95%).
+The coverage badge above updates after each successful default-branch SQLite
+PHPUnit run. It reports line coverage for `app/` (required minimum: 95%).
 
 ## Documentation and support
 
