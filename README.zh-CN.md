@@ -13,10 +13,13 @@
 
 ## 环境要求
 
-- PHP 8.4 或更高的 PHP 8.x 版本
+- PHP 8.4.x（8.4.27 或更高）或 PHP 8.5+（8.5.12 或更高，限 PHP 8.x）
 - Composer 2
 - 默认本地配置需要 PDO SQLite；使用 PostgreSQL 时需要 PDO PostgreSQL
 - CI 使用 PostgreSQL 18 测试，同时支持 SQLite
+
+CI 和生产容器使用 PHP 8.4。Composer 也允许 PHP 8.5.12 及更高的 PHP 8.x
+版本；本仓库不声明单独的 PHP 8.5+ CI 覆盖。
 
 可以使用本地 PHP 或自行选择容器环境。在对应环境的仓库根目录执行以下命令。
 
@@ -26,6 +29,7 @@
 git clone https://github.com/haoyuqi/wallpaper-api.git
 cd wallpaper-api
 composer install
+composer check-platform-reqs
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
@@ -94,7 +98,9 @@ CI 会构建镜像，并通过隔离的 PostgreSQL 18 数据库进行冒烟验�
 
 运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份恢复和版本回滚见
 [部署手册](docs/operations/deployment.md)。`/up` 只检查应用能否启动，不能证明数据库可用
-或数据同步及时。实际托管和资源创建独立于代码发布。
+或数据同步及时。非 Docker 生产部署应使用生产 PHP 执行 `composer install --no-dev`，
+然后执行 `composer check-platform-reqs --no-dev` 检查实际平台。
+实际托管和资源创建独立于代码发布。
 发布前检查见 [发布清单](docs/release.md)，改动记录见 [CHANGELOG](CHANGELOG.md)。
 
 ## 测试与代码风格

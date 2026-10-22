@@ -2,13 +2,23 @@
 
 This is a portable deployment reference, not a record of a live deployment.
 It creates no cloud resources and assumes no particular hosting provider.
-Use PHP 8.4 and PostgreSQL 18, an HTTPS entry point, and one scheduler host.
+Use PHP 8.4.x at 8.4.27 or later and PostgreSQL 18, an HTTPS entry point, and
+one scheduler host. The production Docker image follows the PHP 8.4 tag and
+fails its build if the resolved runtime is below 8.4.27.
 SQLite remains supported for local use and tests.
+For non-Docker production deployments, use PHP 8.4.x at 8.4.27 or later, or
+PHP 8.5.x at 8.5.12 or later within PHP 8.x. After installing production
+dependencies, run `composer check-platform-reqs --no-dev` with the actual PHP
+executable that will serve the application. This check ignores Composer's
+`config.platform` simulation and verifies the real runtime.
 
 ## Build and runtime
 
-The [Dockerfile](../../Dockerfile) uses the official PHP Apache image and a
-multi-stage Composer install from `composer.lock`. The final image runs as
+The [Dockerfile](../../Dockerfile) uses the official PHP 8.4 Apache image with
+a build-time 8.4.27 minimum check and a multi-stage Composer install from
+`composer.lock`. The floating minor tag receives later 8.4 security patches;
+the check prevents a stale or regressed image from building. The final image
+runs as
 `www-data` on port 8080, includes no development dependencies or application
 `.env`, and serves only `public/`. Personal files are excluded from the build
 context. Source files are root-owned; only

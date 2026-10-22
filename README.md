@@ -13,10 +13,14 @@ It stores metadata and source JSON; synchronization does not download images.
 
 ## Requirements
 
-- PHP 8.4 or later within the PHP 8.x series
+- PHP 8.4.x (8.4.27 or later) or PHP 8.5+ (8.5.12 or later within PHP 8.x)
 - Composer 2
 - PDO SQLite for the default local setup, or PDO PostgreSQL for PostgreSQL
 - PostgreSQL 18 is tested in CI; SQLite is also supported
+
+CI and the production container use PHP 8.4. Composer also permits PHP 8.5.12
+and later within PHP 8.x; this repository does not claim separate PHP 8.5+
+CI coverage.
 
 Use a local PHP installation or a container environment of your choice. Run
 the commands below from the repository root in that environment.
@@ -27,6 +31,7 @@ the commands below from the repository root in that environment.
 git clone https://github.com/haoyuqi/wallpaper-api.git
 cd wallpaper-api
 composer install
+composer check-platform-reqs
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
@@ -103,6 +108,8 @@ checks it against a disposable PostgreSQL 18 database.
 
 Follow the [deployment runbook](docs/operations/deployment.md) for runtime secrets,
 TLS/proxies, persistent locks, migrations, health checks, backups and rollback.
+For non-Docker production deployments, run `composer install --no-dev` and
+`composer check-platform-reqs --no-dev` with the production PHP executable.
 `/up` confirms application boot, not database availability or synchronization
 freshness. Actual hosting and resource provisioning are separate from the code
 release. See [release gates](docs/release.md) and [CHANGELOG](CHANGELOG.md).

@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM php:8.4-apache-bookworm AS runtime
 
+RUN php -r 'if (PHP_VERSION_ID < 80427) { fwrite(STDERR, "PHP 8.4.27 or newer is required." . PHP_EOL); exit(1); }'
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql \
