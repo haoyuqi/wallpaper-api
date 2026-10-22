@@ -46,7 +46,7 @@ final class LegacyArchiveGuardTest extends TestCase
         }
     }
 
-    public function test_workflows_are_read_only_and_do_not_commit_or_download_wallpapers(): void
+    public function test_workflow_write_access_is_limited_to_trusted_automation(): void
     {
         $workflowFiles = $this->filesWithExtensions(base_path('.github/workflows'), ['yml', 'yaml']);
 
@@ -59,8 +59,18 @@ final class LegacyArchiveGuardTest extends TestCase
 
             if (basename($filePath) === 'dependabot-auto-merge.yml') {
                 // GitHub needs job-level contents: write to enable auto-merge. This is the only
-                // allowed exception and it must never check out or execute pull request code.
+                // exception that handles pull requests; it must never check out their code.
                 self::assertStringNotContainsString('actions/checkout', $contents, "Workflow {$filePath} is privileged and must not check out code.");
+            } elseif (basename($filePath) === 'coverage-badge.yml') {
+                // Badge publishing reads artifacts only from successful CI runs on this repo's
+                // default branch and checks out trusted code with credentials disabled.
+                self::assertStringContainsString('workflow_run:', $contents);
+                self::assertStringContainsString('branches: [master]', $contents);
+                self::assertStringContainsString("github.event.workflow_run.conclusion == 'success'", $contents);
+                self::assertStringContainsString("github.event.workflow_run.event != 'pull_request'", $contents);
+                self::assertStringContainsString('github.event.workflow_run.head_repository.full_name == github.repository', $contents);
+                self::assertStringContainsString('ref: master', $contents);
+                self::assertStringContainsString('persist-credentials: false', $contents);
             } else {
                 self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', $contents, "Workflow {$filePath} must not request contents write permission.");
             }

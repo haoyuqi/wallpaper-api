@@ -1,6 +1,7 @@
 # Wallpaper API
 
 [![CI](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhaoyuqi%2Fwallpaper-api%2Fcoverage-badge%2Fcoverage.json)](https://github.com/haoyuqi/wallpaper-api/actions/workflows/ci.yml?query=branch%3Amaster)
 [![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/haoyuqi/wallpaper-api)](https://github.com/haoyuqi/wallpaper-api/releases/latest)
@@ -115,9 +116,8 @@ PostgreSQL 测试配置见 [贡献指南](CONTRIBUTING.md)，命名和可读性�
 Larastan 以 level 5 检查应用代码、路由、启动配置和数据库定义，不使用忽略错误的 baseline。
 CI 还会验证生产容器；自动化检查不会请求真实 Bing。
 
-`app/` 的行覆盖率为 **99.39%**，由 SQLite PHPUnit 任务在
-[2026-10-22 的 CI 运行](https://github.com/haoyuqi/wallpaper-api/actions/runs/39708656415)
-中测得（最低要求：95%）。
+上方覆盖率徽章会在默认分支每次 CI 成功后自动更新，显示 SQLite PHPUnit
+测得的 `app/` 行覆盖率（最低要求：95%）。
 
 ## 文档与支持
 
