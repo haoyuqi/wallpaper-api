@@ -32,18 +32,23 @@ def collect(name, result):
     metrics = clover.find("./project/metrics") if clover is not None else None
     statements = int(metrics.get("statements", "0")) if metrics is not None else 0
     covered = int(metrics.get("coveredstatements", "0")) if metrics is not None else 0
+    coverage = covered / statements * 100 if statements else None
+    minimum = float(os.environ["MIN_LINE_COVERAGE"]) if name == "sqlite" and os.environ.get("MIN_LINE_COVERAGE") else None
+    below_minimum = minimum is not None and (coverage is None or coverage < minimum)
     data = {
         "name": name,
-        "result": result,
+        "result": "failure" if below_minimum else result,
         "php": installed_version('echo PHP_VERSION;'),
         "laravel": installed_version('require "vendor/autoload.php"; echo Illuminate\\Foundation\\Application::VERSION;'),
         "tests": count("tests"),
         "failures": count("failures") + count("errors") if suites else None,
         "skipped": count("skipped"),
-        "coverage": f"{covered / statements * 100:.2f}%" if statements else None,
+        "coverage": f"{coverage:.2f}%" if coverage is not None else None,
     }
     Path("ci-data").mkdir(exist_ok=True)
     Path(f"ci-data/{name}.json").write_text(json.dumps(data))
+    if below_minimum:
+        raise SystemExit(f"SQLite app/ line coverage {display(data['coverage'])} is below the {minimum:g}% minimum")
 
 
 def display(value):
@@ -86,8 +91,12 @@ def render(repo):
         total, failures, skipped = item.get("tests"), item.get("failures"), item.get("skipped")
         passed = total - failures - skipped if None not in (total, failures, skipped) else None
         lines.append(f"| {label} | {status(item.get('result'))} | {display(passed)} / {display(total)} | {display(skipped)} |")
-    lines += ["", "## Coverage", "", "| Scope | Line coverage |", "| --- | ---: |",
-              f"| `app/` from SQLite tests | {display(version_source.get('coverage'))} |", "",
+    minimum = os.environ.get("MIN_LINE_COVERAGE")
+    measured = version_source.get("coverage")
+    minimum_label = f"{minimum}%" if minimum else "Not available"
+    coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
+    lines += ["", "## Coverage", "", "| Scope | Line coverage | Minimum | Result |", "| --- | ---: | ---: | --- |",
+              f"| `app/` from SQLite tests | {display(measured)} | {minimum_label} | {coverage_result} |", "",
               "## Installed environment", "", "| Tool | Version |", "| --- | --- |",
               f"| PHP | {display(version_source.get('php'))} |",
               f"| Laravel | {display(version_source.get('laravel'))} |", "",
