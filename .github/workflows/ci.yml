@@ -3,8 +3,8 @@ name: CI
 on:
   workflow_dispatch:
   schedule:
-    # Daily at 07:00 Asia/Shanghai (23:00 UTC on the previous day).
-    - cron: '0 23 * * *'
+    # Daily at 03:34 Asia/Shanghai (19:34 UTC on the previous day).
+    - cron: '34 19 * * *'
   push:
     branches:
       - master
