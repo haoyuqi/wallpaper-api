@@ -1,8 +1,9 @@
 # Code style
 
-PHP 8.4.27 and PHP 8.5.12 are the minimum supported runtimes for their
-respective minor branches. Run Pint with the project's Laravel
-preset both locally and in CI. Existing `declare(strict_types=1)` declarations
+PHP 8.4.27 is the CI baseline. Composer also permits PHP 8.5.12 or later in
+the 8.5 line, which is not separately covered by CI. Run Pint with the
+project's Laravel preset both locally and in CI. Existing
+`declare(strict_types=1)` declarations
 may remain, but adding them is optional and is not enforced by Pint.
 Larastan level 5 checks production code and database definitions; use accurate
 PHPDoc for framework magic and fix findings instead of suppressing them.
