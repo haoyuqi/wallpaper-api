@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -30,12 +31,18 @@ def collect(name, result):
     count = lambda key: sum(int(suite.get(key, "0")) for suite in suites) if suites else None
     clover = xml_root("ci-data/coverage.xml")
     metrics = clover.find("./project/metrics") if clover is not None else None
-    statements = int(metrics.get("statements", "0")) if metrics is not None else 0
-    covered = int(metrics.get("coveredstatements", "0")) if metrics is not None else 0
-    coverage = covered / statements * 100 if statements else None
+    raw_statements = metrics.get("statements") if metrics is not None else None
+    raw_covered = metrics.get("coveredstatements") if metrics is not None else None
+    valid_counts = all(
+        isinstance(value, str) and re.fullmatch(r"[0-9]+", value) is not None
+        for value in (raw_statements, raw_covered)
+    )
+    statements = int(raw_statements) if valid_counts else 0
+    covered = int(raw_covered) if valid_counts else 0
+    coverage = covered / statements * 100 if valid_counts and statements else None
     minimum = float(os.environ["MIN_LINE_COVERAGE"]) if name == "sqlite" and os.environ.get("MIN_LINE_COVERAGE") else None
     below_minimum = minimum is not None and (
-        (statements <= 0 or covered <= 0 or covered != statements)
+        (not valid_counts or statements <= 0 or covered <= 0 or covered != statements)
         if minimum == 100
         else coverage is None or coverage < minimum
     )

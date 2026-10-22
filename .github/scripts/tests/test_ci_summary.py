@@ -67,7 +67,14 @@ class CoverageGateTest(unittest.TestCase):
         result, metrics = self.collect(-1, -1)
 
         self.assertNotEqual(0, result.returncode)
-        self.assertEqual("100.00%", metrics["coverage"])
+        self.assertIsNone(metrics["coverage"])
+        self.assertFalse(metrics["coverage_passed"])
+
+    def test_underscored_coverage_counters_fail_as_malformed(self):
+        result, metrics = self.collect("1_000", "1_000")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIsNone(metrics["coverage"])
         self.assertFalse(metrics["coverage_passed"])
 
     def test_summary_uses_raw_gate_result_instead_of_rounded_percentage(self):
