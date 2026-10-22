@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible problem with the API or synchronization app
+title: "[Bug]: "
+body:
+  - type: textarea
+    id: problem-actual
+    attributes:
+      label: Problem and actual behavior
+      description: Describe the problem and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include a request or sync command and its HTTP or command result.
+      placeholder: |
+        Request or command:
+        Result:
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: State what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Give exact installed PHP and database versions, plus the application version or commit SHA. Do not prefix versions with v.
+      placeholder: |
+        PHP:
+        Database engine and version:
+        Application version or commit:
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Optional diagnostics
+      description: Add sanitized logs or a screenshot if they help explain the problem. Remove credentials and private data.
+    validations:
+      required: false
