@@ -7,7 +7,10 @@ its `v3` tags are unrelated to this API's release numbering.
 ## Required gates
 
 1. Merge reviewed code through a PR. Confirm the intended release scope is complete.
-2. Verify the exact release commit is on `master` with no uncommitted changes. Run the full CI workflow on that commit, including PHP 8.4 lint/static analysis/audit, SQLite, PostgreSQL 18 and the production-container smoke test.
+2. Verify the exact release commit is on `master` with no uncommitted changes.
+   Run the full CI workflow on that commit, including PHP 8.4 lint/static
+   analysis/audit, PHP 8.4 and 8.5 SQLite and PostgreSQL 18 tests, and the
+   PHP 8.4.27 production-container smoke test.
 3. Inspect the container smoke result: non-root execution, isolated migrations and rollback, cached boot, health, public query contract, CORS/limit headers and sanitized database failure. It makes no live Bing requests.
 4. Review README translations, the v1 contract, architecture and operating references against the final code. Record any known limitations in release notes.
 5. Review [CHANGELOG](../CHANGELOG.md), rename the pending section to the version and publication date in the release PR, then verify the final merged commit again.
@@ -63,4 +66,6 @@ changing existing tags.
 - Full matching responses materialize in memory; a per-IP budget does not bound one response or distributed traffic.
 - One scheduler host with persistent file locks; ephemeral multi-instance deployments need deliberate coordination.
 - `/up` checks boot only, not data freshness or database/source readiness.
-- Runtime supports SQLite and PostgreSQL 18; PHP 8.4 is the supported CI baseline. No PHP 8.3 support is claimed.
+- Runtime supports SQLite and PostgreSQL 18; CI covers PHP 8.4 and 8.5.
+  Composer excludes PHP versions below 8.4.27 and the vulnerable PHP
+  8.5.0–8.5.11 range. No PHP 8.3 support is claimed.

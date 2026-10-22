@@ -13,7 +13,7 @@ It stores metadata and source JSON; synchronization does not download images.
 
 ## Requirements
 
-- PHP 8.4 or later within the PHP 8.x series
+- PHP 8.4.27 or later, or PHP 8.5.12 or later within the PHP 8.x series
 - Composer 2
 - PDO SQLite for the default local setup, or PDO PostgreSQL for PostgreSQL
 - PostgreSQL 18 is tested in CI; SQLite is also supported

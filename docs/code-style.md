@@ -1,6 +1,7 @@
 # Code style
 
-PHP 8.4 is the minimum supported runtime. Run Pint with the project's Laravel
+PHP 8.4.27 and PHP 8.5.12 are the minimum supported runtimes for their
+respective minor branches. Run Pint with the project's Laravel
 preset both locally and in CI. Existing `declare(strict_types=1)` declarations
 may remain, but adding them is optional and is not enforced by Pint.
 Larastan level 5 checks production code and database definitions; use accurate

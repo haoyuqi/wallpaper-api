@@ -13,7 +13,7 @@
 
 ## 环境要求
 
-- PHP 8.4 或更高的 PHP 8.x 版本
+- PHP 8.4.27 或更高版本，或 PHP 8.5.12 或更高的 PHP 8.x 版本
 - Composer 2
 - 默认本地配置需要 PDO SQLite；使用 PostgreSQL 时需要 PDO PostgreSQL
 - CI 使用 PostgreSQL 18 测试，同时支持 SQLite

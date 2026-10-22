@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM php:8.4-apache-bookworm AS runtime
+FROM php:8.4.27-apache-bookworm AS runtime
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
