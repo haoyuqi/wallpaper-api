@@ -88,7 +88,7 @@ def render(repo):
     minimum = os.environ.get("MIN_LINE_COVERAGE")
     measured = version_source.get("coverage")
     coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
-    lines = [f"# {'❌ CI failed' if failed else '✅ CI passed'}", "",
+    lines = [f"# {'🔴 CI failed' if failed else '🟢 CI passed'}", "",
              "| Tests · SQLite | Line coverage | Checks |", "| :--- | :--- | :--- |",
              f"| **{display(passed)} / {display(total)} passed**<br>{display(skipped)} skipped | **{display(measured)}**<br>`app/` · minimum {minimum + '%' if minimum else 'Not available'} · {coverage_result} | **{len(jobs) - len(failed)} / {len(jobs)} passed** |",
              "", f"**Environment:** PHP {display(version_source.get('php'))} · Laravel {display(version_source.get('laravel'))}",
