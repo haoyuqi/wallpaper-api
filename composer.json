@@ -10,7 +10,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": ">=8.4.27 <8.5.0 || >=8.5.12 <8.6.0",
+        "php": "~8.4.27 || ^8.5.12",
         "haoyuqi/download-bing-wallpaper": "^3.0",
         "laravel/framework": "^13.17"
     },

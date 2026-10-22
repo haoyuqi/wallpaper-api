@@ -13,13 +13,13 @@
 
 ## 环境要求
 
-- PHP 8.4.x（8.4.27 或更高）或 PHP 8.5.x（8.5.12 或更高）
+- PHP 8.4.x（8.4.27 或更高）或 PHP 8.5+（8.5.12 或更高，限 PHP 8.x）
 - Composer 2
 - 默认本地配置需要 PDO SQLite；使用 PostgreSQL 时需要 PDO PostgreSQL
 - CI 使用 PostgreSQL 18 测试，同时支持 SQLite
 
-CI 和生产容器使用 PHP 8.4。Composer 也允许 PHP 8.5.12 及更高的 8.5
-系列版本；本仓库不声明单独的 PHP 8.5 CI 覆盖。
+CI 和生产容器使用 PHP 8.4。Composer 也允许 PHP 8.5.12 及更高的 PHP 8.x
+版本；本仓库不声明单独的 PHP 8.5+ CI 覆盖。
 
 可以使用本地 PHP 或自行选择容器环境。在对应环境的仓库根目录执行以下命令。
 

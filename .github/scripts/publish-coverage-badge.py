@@ -53,7 +53,7 @@ if source_sha and source_branch:
         raise SystemExit(0)
 
 badge = json.dumps(
-    {"schemaVersion": 1, "label": "coverage · PHP 8.4", "message": coverage, "color": "blue"},
+    {"schemaVersion": 1, "label": "coverage", "message": coverage, "color": "blue"},
     separators=(",", ":"),
 ).encode()
 

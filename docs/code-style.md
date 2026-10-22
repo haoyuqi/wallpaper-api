@@ -1,7 +1,7 @@
 # Code style
 
-PHP 8.4.27 is the CI baseline. Composer also permits PHP 8.5.12 or later in
-the 8.5 line, which is not separately covered by CI. Run Pint with the
+PHP 8.4.27 is the CI baseline. Composer also permits PHP 8.5.12 or later
+within PHP 8.x, which is not separately covered by CI. Run Pint with the
 project's Laravel preset both locally and in CI. Existing
 `declare(strict_types=1)` declarations
 may remain, but adding them is optional and is not enforced by Pint.

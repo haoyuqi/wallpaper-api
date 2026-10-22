@@ -67,6 +67,5 @@ changing existing tags.
 - One scheduler host with persistent file locks; ephemeral multi-instance deployments need deliberate coordination.
 - `/up` checks boot only, not data freshness or database/source readiness.
 - Runtime supports SQLite and PostgreSQL 18; CI and the production container
-  use PHP 8.4. Composer excludes versions below PHP 8.4.27 and the vulnerable
-  PHP 8.5.0–8.5.11 range, but PHP 8.5 is not separately tested in CI. No PHP
-  8.3 support is claimed.
+  use PHP 8.4. Composer allows PHP 8.4.x from 8.4.27 and PHP 8.5+ from 8.5.12,
+  but PHP 8.5+ is not separately tested in CI. No PHP 8.3 support is claimed.
