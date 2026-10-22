@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -30,11 +31,21 @@ def collect(name, result):
     count = lambda key: sum(int(suite.get(key, "0")) for suite in suites) if suites else None
     clover = xml_root("ci-data/coverage.xml")
     metrics = clover.find("./project/metrics") if clover is not None else None
-    statements = int(metrics.get("statements", "0")) if metrics is not None else 0
-    covered = int(metrics.get("coveredstatements", "0")) if metrics is not None else 0
-    coverage = covered / statements * 100 if statements else None
+    raw_statements = metrics.get("statements") if metrics is not None else None
+    raw_covered = metrics.get("coveredstatements") if metrics is not None else None
+    valid_counts = all(
+        isinstance(value, str) and re.fullmatch(r"[0-9]+", value) is not None
+        for value in (raw_statements, raw_covered)
+    )
+    statements = int(raw_statements) if valid_counts else 0
+    covered = int(raw_covered) if valid_counts else 0
+    coverage = covered / statements * 100 if valid_counts and statements else None
     minimum = float(os.environ["MIN_LINE_COVERAGE"]) if name == "sqlite" and os.environ.get("MIN_LINE_COVERAGE") else None
-    below_minimum = minimum is not None and (coverage is None or coverage < minimum)
+    below_minimum = minimum is not None and (
+        (not valid_counts or statements <= 0 or covered <= 0 or covered != statements)
+        if minimum == 100
+        else coverage is None or coverage < minimum
+    )
     data = {
         "name": name,
         "result": "failure" if below_minimum else result,
@@ -44,6 +55,7 @@ def collect(name, result):
         "failures": count("failures") + count("errors") if suites else None,
         "skipped": count("skipped"),
         "coverage": f"{coverage:.2f}%" if coverage is not None else None,
+        "coverage_passed": not below_minimum if minimum is not None else None,
     }
     Path("ci-data").mkdir(exist_ok=True)
     Path(f"ci-data/{name}.json").write_text(json.dumps(data))
@@ -87,7 +99,8 @@ def render(repo):
     passed = total - failures - skipped if None not in (total, failures, skipped) else None
     minimum = os.environ.get("MIN_LINE_COVERAGE")
     measured = version_source.get("coverage")
-    coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
+    coverage_passed = version_source.get("coverage_passed")
+    coverage_result = "Not available" if coverage_passed is None else "Passed" if coverage_passed else "Failed"
     lines = [f"# {'🔴 CI failed' if failed else '🟢 CI passed'}", "",
              "| Tests · SQLite | Line coverage | Checks |", "| :--- | :--- | :--- |",
              f"| **{display(passed)} / {display(total)} passed**<br>{display(skipped)} skipped | **{display(measured)}**<br>`app/` · minimum {minimum + '%' if minimum else 'Not available'} · {coverage_result} | **{len(jobs) - len(failed)} / {len(jobs)} passed** |",

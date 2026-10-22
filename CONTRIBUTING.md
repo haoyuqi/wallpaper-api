@@ -70,6 +70,9 @@ Run `bash scripts/smoke-container.sh <container-name>` only against a disposable
 test container/database: it intentionally rolls back tables. Docker production
 builds are separate from the contributor's normal PHP development environment.
 
+The SQLite CI suite requires exactly 100% PHPUnit line coverage for all source
+files under `app/`; no source files are excluded from the coverage scope. The
+gate compares covered and executable line counts directly, without rounding.
 The default local suite uses PostgreSQL and makes no Bing requests. SQLite is
 useful for a quick check but skips PostgreSQL-only assertions. PostgreSQL tests
 require the PDO PostgreSQL extension. Copy `.env.example` to the Git-ignored

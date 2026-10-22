@@ -36,6 +36,14 @@ final class ComposerDocumentValidatorTest extends TestCase
         }
     }
 
+    public function test_rejects_an_invalid_requested_date_before_parsing_the_document(): void
+    {
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Invalid requested date.');
+
+        (new ComposerDocumentValidator)->validate("{}\n", 0, '2026-02-30');
+    }
+
     public static function acceptedFixtures(): iterable
     {
         yield 'found' => ['found-v1.0.json', 0, '2026-08-31', 'found'];
