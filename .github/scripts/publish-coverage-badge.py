@@ -44,13 +44,21 @@ coverage = metrics.get("coverage")
 if not isinstance(coverage, str) or not re.fullmatch(r"(?:100(?:\.0+)?|\d{1,2}(?:\.\d+)?)%", coverage):
     raise SystemExit("Measured line coverage is missing or invalid")
 
+source_sha = os.environ.get("SOURCE_SHA")
+source_branch = os.environ.get("SOURCE_BRANCH")
+if source_sha and source_branch:
+    head = request("GET", f"git/ref/heads/{source_branch}")
+    if head["object"]["sha"] != source_sha:
+        print("Skipping coverage from an older default-branch commit")
+        raise SystemExit(0)
+
 badge = json.dumps(
     {"schemaVersion": 1, "label": "coverage", "message": coverage, "color": "blue"},
     separators=(",", ":"),
 ).encode()
 
 if request("GET", f"git/ref/heads/{BRANCH}", missing_ok=True) is None:
-    request("POST", "git/refs", {"ref": f"refs/heads/{BRANCH}", "sha": os.environ["GITHUB_SHA"]})
+    request("POST", "git/refs", {"ref": f"refs/heads/{BRANCH}", "sha": source_sha or os.environ["GITHUB_SHA"]})
 
 current = request("GET", f"contents/{FILE}?ref={BRANCH}", missing_ok=True)
 if current is not None and base64.b64decode(current["content"]) == badge:

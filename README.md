@@ -129,8 +129,8 @@ Larastan checks application code, routing, bootstrap and database definitions at
 level 5 without an ignored-error baseline. CI also tests the production container;
 automated checks do not call live Bing.
 
-The coverage badge above updates after each successful default-branch SQLite
-PHPUnit run. It reports line coverage for `app/` (required minimum: 95%).
+The coverage badge above updates after each successful default-branch CI run.
+It reports SQLite PHPUnit line coverage for `app/` (required minimum: 95%).
 
 ## Documentation and support
 
