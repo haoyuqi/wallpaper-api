@@ -115,6 +115,10 @@ PostgreSQL 测试配置见 [贡献指南](CONTRIBUTING.md)，命名和可读性�
 Larastan 以 level 5 检查应用代码、路由、启动配置和数据库定义，不使用忽略错误的 baseline。
 CI 还会验证生产容器；自动化检查不会请求真实 Bing。
 
+`app/` 的行覆盖率为 **99.39%**，由 SQLite PHPUnit 任务在
+[2026-10-22 的 CI 运行](https://github.com/haoyuqi/wallpaper-api/actions/runs/39708656415)
+中测得（最低要求：95%）。
+
 ## 文档与支持
 
 以下详细文档目前使用英文。

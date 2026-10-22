@@ -128,6 +128,10 @@ Larastan checks application code, routing, bootstrap and database definitions at
 level 5 without an ignored-error baseline. CI also tests the production container;
 automated checks do not call live Bing.
 
+Line coverage for `app/`: **99.39%**, measured by the SQLite PHPUnit job in the
+[CI run on 2026-10-22](https://github.com/haoyuqi/wallpaper-api/actions/runs/39708656415)
+(required minimum: 95%).
+
 ## Documentation and support
 
 - [Architecture](docs/architecture.md): responsibilities, data flows and extension boundaries
