@@ -80,18 +80,18 @@ def render(repo):
     lines = ["# CI run summary", "", f"**Overall:** {'Passed' if all_passed else 'Failed'}", "",
              "## Checks", "", "| Job | Result |", "| --- | --- |"]
     lines += [f"| {label} | {status(needs.get(key, {}).get('result'))} |" for label, key in jobs]
-    lines += ["", "## Database test results", "", "| Target | Result | Passed / total |", "| --- | --- | ---: |"]
+    lines += ["", "## Database test results", "", "| Target | Result | Passed / total | Skipped |", "| --- | --- | ---: | ---: |"]
     for label, key in suites:
         item = data.get(key, {})
         total, failures, skipped = item.get("tests"), item.get("failures"), item.get("skipped")
         passed = total - failures - skipped if None not in (total, failures, skipped) else None
-        lines.append(f"| {label} | {status(item.get('result'))} | {display(passed)} / {display(total)} |")
+        lines.append(f"| {label} | {status(item.get('result'))} | {display(passed)} / {display(total)} | {display(skipped)} |")
     lines += ["", "## Coverage", "", "| Scope | Line coverage |", "| --- | ---: |",
               f"| `app/` from SQLite tests | {display(version_source.get('coverage'))} |", "",
               "## Installed environment", "", "| Tool | Version |", "| --- | --- |",
               f"| PHP | {display(version_source.get('php'))} |",
               f"| Laravel | {display(version_source.get('laravel'))} |", "",
-              "## Reports", "", "Download the `php-coverage` and `ci-data-*` artifacts from this run when available."]
+              "## Reports", "", f"[Download this run's reports]({os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}#artifacts): `php-coverage` and `ci-data-*` when available."]
     if repo == "lab":
         lines += ["The database matrix rows reflect each job that uploaded a result. The browser job uses PostgreSQL 18."]
     Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text("\n".join(lines) + "\n")
