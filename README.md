@@ -137,7 +137,7 @@ level 5 without an ignored-error baseline. CI also tests the production containe
 automated checks do not call live Bing.
 
 The coverage badge above updates after each successful default-branch CI run.
-It reports SQLite PHPUnit line coverage for `app/` (required minimum: 95%).
+It reports SQLite PHPUnit line coverage for `app/`; CI requires exactly 100%.
 
 ## Documentation and support
 

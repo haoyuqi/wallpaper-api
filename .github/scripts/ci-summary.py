@@ -34,7 +34,11 @@ def collect(name, result):
     covered = int(metrics.get("coveredstatements", "0")) if metrics is not None else 0
     coverage = covered / statements * 100 if statements else None
     minimum = float(os.environ["MIN_LINE_COVERAGE"]) if name == "sqlite" and os.environ.get("MIN_LINE_COVERAGE") else None
-    below_minimum = minimum is not None and (coverage is None or coverage < minimum)
+    below_minimum = minimum is not None and (
+        (statements <= 0 or covered <= 0 or covered != statements)
+        if minimum == 100
+        else coverage is None or coverage < minimum
+    )
     data = {
         "name": name,
         "result": "failure" if below_minimum else result,
@@ -44,6 +48,7 @@ def collect(name, result):
         "failures": count("failures") + count("errors") if suites else None,
         "skipped": count("skipped"),
         "coverage": f"{coverage:.2f}%" if coverage is not None else None,
+        "coverage_passed": not below_minimum if minimum is not None else None,
     }
     Path("ci-data").mkdir(exist_ok=True)
     Path(f"ci-data/{name}.json").write_text(json.dumps(data))
@@ -87,7 +92,8 @@ def render(repo):
     passed = total - failures - skipped if None not in (total, failures, skipped) else None
     minimum = os.environ.get("MIN_LINE_COVERAGE")
     measured = version_source.get("coverage")
-    coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
+    coverage_passed = version_source.get("coverage_passed")
+    coverage_result = "Not available" if coverage_passed is None else "Passed" if coverage_passed else "Failed"
     lines = [f"# {'🔴 CI failed' if failed else '🟢 CI passed'}", "",
              "| Tests · SQLite | Line coverage | Checks |", "| :--- | :--- | :--- |",
              f"| **{display(passed)} / {display(total)} passed**<br>{display(skipped)} skipped | **{display(measured)}**<br>`app/` · minimum {minimum + '%' if minimum else 'Not available'} · {coverage_result} | **{len(jobs) - len(failed)} / {len(jobs)} passed** |",

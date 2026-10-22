@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\SyncRun;
 use App\Models\Wallpaper;
+use App\Services\WallpaperSyncService;
 use Haoyuqi\DownloadBingWallpaper\Contracts\WallpaperMetadataProvider;
 use Haoyuqi\DownloadBingWallpaper\Data\MetadataResult;
 use Illuminate\Foundation\Console\ClosureCommand;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -353,6 +355,14 @@ final class SyncWallpapersTest extends TestCase
         self::assertStringContainsString('real date in YYYY-MM-DD format', $output);
         self::assertSame(0, Wallpaper::query()->count());
         self::assertSame(0, SyncRun::query()->count());
+    }
+
+    public function test_service_rejects_an_invalid_date_before_synchronization(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A real date in YYYY-MM-DD format is required.');
+
+        app(WallpaperSyncService::class)->sync('2026-02-30');
     }
 
     public static function invalidDates(): iterable
