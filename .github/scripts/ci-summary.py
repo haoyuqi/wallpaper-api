@@ -81,26 +81,27 @@ def render(repo):
                   ("PostgreSQL 18", "postgres-18")]
         version_source = data.get("sqlite", {})
 
-    all_passed = all(needs.get(key, {}).get("result") == "success" for _, key in jobs)
-    lines = ["# CI run summary", "", f"**Overall:** {'Passed' if all_passed else 'Failed'}", "",
-             "## Checks", "", "| Job | Result |", "| --- | --- |"]
-    lines += [f"| {label} | {status(needs.get(key, {}).get('result'))} |" for label, key in jobs]
-    lines += ["", "## Database test results", "", "| Target | Result | Passed / total | Skipped |", "| --- | --- | ---: | ---: |"]
+    failed = [(label, key) for label, key in jobs if needs.get(key, {}).get("result") != "success"]
+    sqlite = data.get("sqlite", {})
+    total, failures, skipped = sqlite.get("tests"), sqlite.get("failures"), sqlite.get("skipped")
+    passed = total - failures - skipped if None not in (total, failures, skipped) else None
+    minimum = os.environ.get("MIN_LINE_COVERAGE")
+    measured = version_source.get("coverage")
+    coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
+    lines = [f"# {'❌ CI failed' if failed else '✅ CI passed'}", "",
+             "| Tests · SQLite | Line coverage | Checks |", "| :--- | :--- | :--- |",
+             f"| **{display(passed)} / {display(total)} passed**<br>{display(skipped)} skipped | **{display(measured)}**<br>`app/` · minimum {minimum + '%' if minimum else 'Not available'} · {coverage_result} | **{len(jobs) - len(failed)} / {len(jobs)} passed** |",
+             "", f"**Environment:** PHP {display(version_source.get('php'))} · Laravel {display(version_source.get('laravel'))}",
+             "", "## Tested databases", "", "| Target | Result | Passed / total | Skipped |", "| --- | --- | ---: | ---: |"]
     for label, key in suites:
         item = data.get(key, {})
         total, failures, skipped = item.get("tests"), item.get("failures"), item.get("skipped")
         passed = total - failures - skipped if None not in (total, failures, skipped) else None
         lines.append(f"| {label} | {status(item.get('result'))} | {display(passed)} / {display(total)} | {display(skipped)} |")
-    minimum = os.environ.get("MIN_LINE_COVERAGE")
-    measured = version_source.get("coverage")
-    minimum_label = f"{minimum}%" if minimum else "Not available"
-    coverage_result = "Not available" if measured is None or minimum is None else "Passed" if float(measured.rstrip("%")) >= float(minimum) else "Failed"
-    lines += ["", "## Coverage", "", "| Scope | Line coverage | Minimum | Result |", "| --- | ---: | ---: | --- |",
-              f"| `app/` from SQLite tests | {display(measured)} | {minimum_label} | {coverage_result} |", "",
-              "## Installed environment", "", "| Tool | Version |", "| --- | --- |",
-              f"| PHP | {display(version_source.get('php'))} |",
-              f"| Laravel | {display(version_source.get('laravel'))} |", "",
-              "## Reports", "", f"[Download this run's reports]({os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}#artifacts): `php-coverage` and `ci-data-*` when available."]
+    if failed:
+        lines += ["", "## Checks needing attention", "", "| Job | Result |", "| --- | --- |"]
+        lines += [f"| {label} | {status(needs.get(key, {}).get('result'))} |" for label, key in failed]
+    lines += ["", f"[Download test and coverage reports]({os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}#artifacts). These are files saved by this CI run."]
     if repo == "lab":
         lines += ["The database matrix rows reflect each job that uploaded a result. The browser job uses PostgreSQL 18."]
     Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text("\n".join(lines) + "\n")
