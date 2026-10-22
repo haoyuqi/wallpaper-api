@@ -1,6 +1,7 @@
 name: Feature request
 description: Propose an improvement to the API or synchronization app
-title: "[Feature]: "
+title: "[Feature] "
+labels: [enhancement]
 body:
   - type: textarea
     id: problem
