@@ -245,9 +245,12 @@ def complete_once(base_url, token, model, system, user):
             body = response.read(MAX_RESPONSE + 1)
     except urllib.error.HTTPError as error:
         try:
-            detail = error.read(8192).lower()
-        except (http.client.HTTPException, ConnectionError):
-            detail = b''
+            try:
+                detail = error.read(8192).lower()
+            except (http.client.HTTPException, ConnectionError):
+                detail = b''
+        finally:
+            error.close()
         exhausted = any(word in detail for word in (b'daily', b'quota', b'budget', b'insufficient', b'exhaust', b'credit'))
         retryable = (error.code == 429 and not exhausted) or error.code in (500, 502, 503, 504)
         raise GenerationError(f'http_status_{error.code}', retryable=retryable) from None

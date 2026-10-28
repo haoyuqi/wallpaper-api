@@ -64,10 +64,15 @@ final class LegacyArchiveGuardTest extends TestCase
             } elseif (basename($filePath) === 'release.yml') {
                 // Publishing is the only write and happens after every check passes for a
                 // canonical tag on master. Pull request paths never reach this workflow.
-                self::assertSame(1, preg_match_all('/contents:\s*write\b/', $contents), "Workflow {$filePath} must request contents write only for publishing.");
+                $publishStart = strpos($contents, "\n  publish:");
+                self::assertNotFalse($publishStart, "Workflow {$filePath} must keep a publish job.");
+                $publish = substr($contents, $publishStart);
+                self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', substr($contents, 0, $publishStart), "Workflow {$filePath} must keep validation and note jobs read-only.");
+                self::assertSame(1, preg_match_all('/contents:\s*write\b/', $publish), "Workflow {$filePath} must request contents write only for publishing.");
                 self::assertStringContainsString("tags: ['v*']", $contents);
-                self::assertStringContainsString("if: github.event_name == 'push'", $contents);
-                self::assertStringContainsString('--verify-tag', $contents);
+                self::assertStringContainsString('needs: [validate, checks, notes]', $publish);
+                self::assertStringContainsString("if: github.event_name == 'push'", $publish);
+                self::assertStringContainsString('--verify-tag', $publish);
                 self::assertStringContainsString('persist-credentials: false', $contents);
             } elseif (basename($filePath) === 'coverage-badge.yml') {
                 // Badge publishing reads artifacts only from successful CI runs on this repo's
