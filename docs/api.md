@@ -179,10 +179,10 @@ by `Retry-After` before retrying.
 
 By default, browser requests from any origin are allowed without credentials.
 Deployments can restrict allowed origins. CORS does not provide authentication.
-See [public API controls](operations/public-api.md) for configuration and limits.
+Set `CORS_ALLOWED_ORIGINS` and `WALLPAPER_REQUESTS_PER_MINUTE` to change these
+defaults.
 
 ## Related documentation
 
 - [v1 contract](contracts/v1.md): normative HTTP and Composer protocol details.
-- [Daily synchronization](operations/daily-sync.md): how stored data is populated.
-- [README](../README.md): installation and local development.
+- [README](../README.md): installation, configuration, verification and operations.

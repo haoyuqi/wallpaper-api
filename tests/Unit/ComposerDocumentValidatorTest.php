@@ -88,6 +88,10 @@ final class ComposerDocumentValidatorTest extends TestCase
         yield 'insecure copyright URL' => ['data.copyrightLink', 'http://example.com'];
         yield 'invalid image URL' => ['data.imageUrl', 'https://'];
         yield 'insecure download URL' => ['data.downloadUrl', 'http://example.com'];
+        yield 'image URL with username' => ['data.imageUrl', 'https://user@example.test/photo.jpg'];
+        yield 'image URL with password' => ['data.imageUrl', sprintf('https://%s:%s@example.test/photo.jpg', 'user', 'synthetic')];
+        yield 'download URL with credentials' => ['data.downloadUrl', sprintf('https://%s:%s@example.test/photo.jpg', 'user', 'synthetic')];
+        yield 'copyright URL with credentials' => ['data.copyrightLink', sprintf('https://%s:%s@example.test/credit', 'user', 'synthetic')];
         yield 'non-null found error' => ['error', new stdClass];
         yield 'non-UTC timestamp' => ['retrievedAt', '2026-09-01T08:00:00+08:00'];
         yield 'invalid timestamp' => ['retrievedAt', '2026-02-30T00:00:00Z'];

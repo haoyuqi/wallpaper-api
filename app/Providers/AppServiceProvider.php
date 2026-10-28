@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('wallpapers', fn (Request $request): Limit => Limit::perMinute(
-            max(1, (int) config('wallpapers.requests_per_minute')),
+            (int) config('wallpapers.requests_per_minute'),
         )->by($request->ip()));
     }
 }

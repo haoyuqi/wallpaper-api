@@ -1,27 +1,31 @@
 # Project agent guide
 
-This guide supplements global instructions. Follow the user's requirements for
-the environment, safety and authorization.
+This guide supplements global instructions. Follow the user's requirements for the environment, safety and authorization.
 
-## Architecture and navigation
+## Reading order
 
-Before changing code, read the [architecture and feature map](docs/architecture.md)
-to locate implementations and tests, then verify them against the source.
-Update the owning documentation in the same PR when responsibilities, interfaces,
-execution paths or failure behavior change.
+- [README.md](README.md): setup, configuration, API usage, verification and operations.
+- [docs/architecture.md](docs/architecture.md): feature map, responsibilities and runtime paths.
+- [docs/code-style.md](docs/code-style.md): naming, types and readability.
+- [docs/api.md](docs/api.md): public responses, errors and limits.
+- [docs/contracts/v1.md](docs/contracts/v1.md): HTTP and Composer protocol.
 
-## Code style
+Read the owning reference and verify it against the source. When responsibilities, interfaces, execution paths or failure behavior change, update that document in the same change.
 
-Follow [code style](docs/code-style.md) when writing and reviewing code.
+## Boundaries
 
-## Development and review
+- A source or parsing failure never becomes a normal `not_found`.
+- Keep public JSON keys, error codes and the Composer document compatible; protocol changes go to `docs/contracts/v1.md` first.
+- Automated checks never call live Bing.
+- Never run `migrate:fresh`, `migrate:reset` or a table-dropping rollback outside a disposable database.
 
-Follow the [contributing guide](CONTRIBUTING.md) for development, verification and PR review.
-Run the complete local test suite against the dedicated PostgreSQL 18 test database;
-SQLite is a quick check and skips PostgreSQL-specific assertions.
+## Verification
 
-## Contracts and scheduling
+Run the commands in README's *Testing and quality gates*. The suite uses the `testing` connection from `phpunit.xml`, rejects PostgreSQL database names other than `wallpaper_api_test`, and CI requires exactly 100% line coverage for `app/`. Report what ran and what did not; a cancelled run is not a pass.
 
-Read the [v1 contract](docs/contracts/v1.md) before changing inputs, outputs or the
-Composer integration, and [daily synchronization](docs/operations/daily-sync.md)
-before changing scheduled tasks.
+## Delivery
+
+- Branch from `master` as `<type>/<issue-number>-<kebab-case-description>`, or `<type>/<kebab-case-description>` when there is no issue. Supported types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+- Commit messages and pull request titles use `<type>(<scope>): <imperative summary>` in English, lowercase, without a trailing period, within 72 characters.
+- Keep commits focused, describe the affected behavior, and record the checks in the body.
+- Dependabot patch updates that only touch `composer.json` and `composer.lock` auto-merge after `CI result`; that workflow runs with write access on `pull_request_target` and must never check out pull request code.

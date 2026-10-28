@@ -15,12 +15,13 @@ in issues, PRs or the private Project.
 | Public JSON fields | [WallpaperResource::toArray](../app/Http/Resources/WallpaperResource.php), [v1 contract](contracts/v1.md) | WallpaperQueryTest, [ContractFixturesTest](../tests/Unit/ContractFixturesTest.php) |
 | Synchronization and auditing | [SyncWallpapers::handle](../app/Console/Commands/SyncWallpapers.php) → [WallpaperSyncService::sync](../app/Services/WallpaperSyncService.php) | [SyncWallpapersTest](../tests/Feature/SyncWallpapersTest.php) |
 | Composer invocation and protocol | [BingWallpaperGateway::fetch](../app/Integrations/Bing/BingWallpaperGateway.php), [ComposerDocumentValidator::validate](../app/Integrations/Bing/ComposerDocumentValidator.php), [BingWallpaperResult](../app/Integrations/Bing/BingWallpaperResult.php) | [BingWallpaperGatewayTest](../tests/Feature/BingWallpaperGatewayTest.php), [ComposerDocumentValidatorTest](../tests/Unit/ComposerDocumentValidatorTest.php) |
-| Daily scheduling and overlap prevention | [routes/console.php](../routes/console.php), [daily synchronization](operations/daily-sync.md) | [WallpaperScheduleTest](../tests/Feature/WallpaperScheduleTest.php) |
+| Daily scheduling and overlap prevention | [routes/console.php](../routes/console.php) | [WallpaperScheduleTest](../tests/Feature/WallpaperScheduleTest.php) |
 | Tables, calendar dates and UTC instants | [Migrations](../database/migrations), [Wallpaper](../app/Models/Wallpaper.php), [SyncRun](../app/Models/SyncRun.php) | [PersistenceTest](../tests/Feature/PersistenceTest.php) |
 | Safe errors and logs | [bootstrap/app.php](../bootstrap/app.php), [NormalizeApiErrors](../app/Http/Middleware/NormalizeApiErrors.php), [ApiErrorResponse](../app/Http/Responses/ApiErrorResponse.php) | [ApiExceptionTest](../tests/Feature/ApiExceptionTest.php) |
-| CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [public API controls](operations/public-api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
+| CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [api.md](api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
-| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [deployment runbook](operations/deployment.md), [release checklist](release.md) | [Container smoke checks](../scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
+| CI summary and coverage gate | [ci-summary.py](../.github/scripts/ci-summary.py), [CI](../.github/workflows/ci.yml) | [test_ci_summary.py](../.github/scripts/tests/test_ci_summary.py) |
+| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [README operations](../README.md#operations) | [Container smoke checks](../.github/scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
 | Repository file and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
@@ -126,9 +127,9 @@ rendering, covering explicit responses and exceptions with custom render methods
 Non-API requests retain Laravel's exception behavior.
 
 Public reads use the framework CORS middleware and a named per-IP rate limiter.
-Both query modes share the budget; preflight requests bypass it. See
-[public API controls](operations/public-api.md) for environment settings, cache
-and proxy assumptions, safe 429 responses and broad-query resource limitations.
+Both query modes share the budget; preflight requests bypass it. Configure
+`CORS_ALLOWED_ORIGINS` and `WALLPAPER_REQUESTS_PER_MINUTE`; CORS is not
+authentication.
 
 The fallback constructs a response directly and the error formatter produces
 the JSON envelope without resolving Laravel's response factory or initializing
@@ -154,8 +155,8 @@ corresponding schema and operational setup.
 The daily schedule retains its named persistent file-cache overlap lock and
 previous-day UTC behavior. This assumes one scheduler host with persistent
 storage. Multi-instance scheduling and shared locking are deployment decisions,
-not provided by the application. See [daily synchronization](operations/daily-sync.md)
-for the schedule, date selection, locks and recovery procedures.
+not provided by the application. See [README operations](../README.md#operations)
+for the schedule, locks and recovery.
 
 Unit tests cover calendar rules and Composer protocol validation. Feature tests
 cover the real installed command with a fake provider, services, persistence,
@@ -165,8 +166,8 @@ dedicated connection before database traits can migrate; PostgreSQL tests requir
 It also runs Larastan level 5, dependency audit and real production-container
 HTTP smoke tests with PostgreSQL. The image runs non-root and packages production
 dependencies only; it starts no scheduler and performs no automatic migration.
-See [contributing](../CONTRIBUTING.md#verification) for isolated test database
-configuration and verification evidence.
+See [README](../README.md#getting-started) and `phpunit.xml` for the test
+database configuration.
 
 ## Documentation maintenance
 
@@ -181,8 +182,8 @@ Describe current behavior; keep unimplemented designs in issues or PRs. Split
 out a new module reference only when needed, and link it from this map.
 
 [Code style](code-style.md) owns naming and readability rules; the
-[v1 contract](contracts/v1.md) owns protocol fields; [contributing](../CONTRIBUTING.md)
-owns development and review requirements.
+[v1 contract](contracts/v1.md) owns protocol fields; [AGENTS.md](../AGENTS.md)
+owns development, verification and review requirements.
 
 ## Extension boundaries
 
