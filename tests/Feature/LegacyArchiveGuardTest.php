@@ -61,6 +61,14 @@ final class LegacyArchiveGuardTest extends TestCase
                 // GitHub needs job-level contents: write to enable auto-merge. This is the only
                 // exception that handles pull requests; it must never check out their code.
                 self::assertStringNotContainsString('actions/checkout', $contents, "Workflow {$filePath} is privileged and must not check out code.");
+            } elseif (basename($filePath) === 'release.yml') {
+                // Publishing is the only write and happens after every check passes for a
+                // canonical tag on master. Pull request paths never reach this workflow.
+                self::assertSame(1, preg_match_all('/contents:\s*write\b/', $contents), "Workflow {$filePath} must request contents write only for publishing.");
+                self::assertStringContainsString("tags: ['v*']", $contents);
+                self::assertStringContainsString("if: github.event_name == 'push'", $contents);
+                self::assertStringContainsString('--verify-tag', $contents);
+                self::assertStringContainsString('persist-credentials: false', $contents);
             } elseif (basename($filePath) === 'coverage-badge.yml') {
                 // Badge publishing reads artifacts only from successful CI runs on this repo's
                 // default branch and checks out trusted code with credentials disabled.
