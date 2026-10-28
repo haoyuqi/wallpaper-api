@@ -200,8 +200,9 @@ class ReleaseNotesTest(unittest.TestCase):
         self.assertEqual('http_status_401', raised.exception.reason)
 
     def test_redirects_are_not_followed_with_credentials(self):
-        with self.assertRaises(urllib.error.HTTPError):
+        with self.assertRaises(urllib.error.HTTPError) as raised:
             notes.NoRedirect().redirect_request(notes.urllib.request.Request('https://example.test'), None, 302, 'found', {}, 'https://other.test')
+        raised.exception.close()
 
     def test_output_cannot_echo_configuration_or_inject_language_separator(self):
         for output in ['secret-key', 'https://example.test/v1', 'model-id', '<!-- lang:zh -->']:
