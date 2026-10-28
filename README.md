@@ -17,8 +17,8 @@ A Laravel 13 API that collects Bing wallpaper metadata and serves it by date. It
 ## Features
 
 - `GET /api/v1/wallpapers` for one exact date or an inclusive date range, returning only public metadata.
-- `php artisan wallpapers:sync --date=YYYY-MM-DD` validates the installed composer document and records every attempt.
-- Idempotent upserts keyed by source, market, date and item ID, with the wallpaper write and its audit row in one transaction.
+- `php artisan wallpapers:sync --date=YYYY-MM-DD` calls the installed `download-bing-wallpaper` command, validates the JSON it prints, and records every attempt.
+- Idempotent writes keyed by source, market, date and item ID, with the wallpaper and its audit row saved in one transaction.
 - Stable JSON errors for invalid input, missing routes, wrong methods, rate limits and unexpected failures; internal diagnostics never reach the response.
 - Per-IP rate limiting, credential-free CORS for public reads, and a `/up` health check.
 

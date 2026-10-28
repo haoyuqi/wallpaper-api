@@ -17,8 +17,8 @@
 ## 功能
 
 - `GET /api/v1/wallpapers` 支持单个精确日期或包含两端的日期区间，只返回公开元数据。
-- `php artisan wallpapers:sync --date=YYYY-MM-DD` 校验已安装的 Composer 文档，并记录每一次尝试。
-- 以 source、market、date、item ID 为键做幂等 upsert，壁纸写入与审计记录在同一事务内完成。
+- `php artisan wallpapers:sync --date=YYYY-MM-DD` 调用已安装的 `download-bing-wallpaper` 命令，校验它输出的 JSON，并记录每一次同步尝试。
+- 按来源、市场、日期与条目 ID 做幂等写入，壁纸记录与审计记录在同一事务内完成。
 - 输入错误、路由不存在、方法不允许、限流与意外失败都返回稳定的 JSON 错误结构，内部诊断信息不会出现在响应中。
 - 按 IP 限流、公开读取的免凭据 CORS，以及 `/up` 健康检查。
 
