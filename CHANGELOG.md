@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Require patched PHP runtimes (8.4.27 or later, 8.5.12 or later within PHP 8.x)
+  for the application, the Composer manifest and the production image.
+- Update the Bing wallpaper dependency to 3.0.1.
+- Reject composer URLs that embed a user name or password, so credentials cannot
+  be stored or published with the metadata.
+- Require complete `app/` line coverage in CI and publish the measured run
+  summary.
+
 ## 1.1.0 — 2026-10-21
 
 - Add an upgrade migration for the `sync_runs` lookup index so existing
