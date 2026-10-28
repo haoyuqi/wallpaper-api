@@ -21,7 +21,7 @@ in issues, PRs or the private Project.
 | CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [api.md](api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
 | CI summary and coverage gate | [ci-summary.py](../.github/scripts/ci-summary.py), [CI](../.github/workflows/ci.yml) | [test_ci_summary.py](../.github/scripts/tests/test_ci_summary.py) |
-| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [README operations](../README.md#operations) | [Container smoke checks](../scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
+| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [README operations](../README.md#operations) | [Container smoke checks](../.github/scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
 | Repository file and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 

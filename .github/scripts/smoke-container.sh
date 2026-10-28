@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Run only against a disposable CI container and database, never production.
 container_name=${1:?Pass the disposable container name}
-project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 smoke_url=http://127.0.0.1:8080
 smoke_dir=$(mktemp -d)
 trap 'rm -f "$smoke_dir/body.json" "$smoke_dir/headers"; rmdir "$smoke_dir"' EXIT

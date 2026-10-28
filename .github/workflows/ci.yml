@@ -252,7 +252,7 @@ jobs:
             --env DB_SSLMODE=disable wallpaper-api:smoke
 
       - name: Verify migrations, cached boot, queries and safe failures
-        run: bash scripts/smoke-container.sh wallpaper-smoke
+        run: bash .github/scripts/smoke-container.sh wallpaper-smoke
 
       - name: Show container logs on failure
         if: failure()
