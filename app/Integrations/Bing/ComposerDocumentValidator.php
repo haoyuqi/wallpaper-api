@@ -167,10 +167,18 @@ final class ComposerDocumentValidator
 
     private static function isHttpsUrl(mixed $value): bool
     {
-        return is_string($value)
-            && filter_var($value, FILTER_VALIDATE_URL) !== false
-            && parse_url($value, PHP_URL_SCHEME) === 'https'
-            && is_string(parse_url($value, PHP_URL_HOST));
+        if (! is_string($value) || filter_var($value, FILTER_VALIDATE_URL) === false) {
+            return false;
+        }
+
+        $parts = parse_url($value);
+
+        // Credentials embedded in a URL would be stored and published with the metadata.
+        return is_array($parts)
+            && ($parts['scheme'] ?? null) === 'https'
+            && is_string($parts['host'] ?? null)
+            && ! isset($parts['user'])
+            && ! isset($parts['pass']);
     }
 
     private static function isNullableHttpsUrl(mixed $value): bool
