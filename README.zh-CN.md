@@ -116,7 +116,15 @@ CI 要求 `app/` 的 PHPUnit 行覆盖率恰好为 100%，不排除任何文件�
 
 [生产镜像](Dockerfile) 使用 PHP 8.4 与 Apache，以非 root 用户运行并监听 8080。镜像不含凭据与开发依赖，也不会自动启动调度器或执行迁移。CI 会构建镜像，并用一次性的 PostgreSQL 18 数据库验证它。
 
-运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份与回滚见[部署手册](docs/operations/deployment.md)。非 Docker 部署请使用生产 PHP 执行 `composer install --no-dev` 与 `composer check-platform-reqs --no-dev`。`/up` 只能确认应用已启动，不能证明数据库可用或同步数据是最新的。
+运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份与回滚见[运维](#运维)一节。非 Docker 部署请使用生产 PHP 执行 `composer install --no-dev` 与 `composer check-platform-reqs --no-dev`。`/up` 只能确认应用已启动，不能证明数据库可用或同步数据是最新的。
+
+## 运维
+
+- 在单台调度主机上每分钟执行一次 `schedule:run`。重叠锁使用文件缓存，因此该主机上的 `storage/framework/cache/data` 必须持久化，并在发布之间共享。
+- 使用 `pg_dump --format=custom` 备份，并通过恢复到独立数据库、检查迁移状态与行数来验证可恢复性。`APP_KEY` 需在数据库备份之外单独保存。
+- 回滚时恢复上一个已验证的镜像 digest，保持相同的 `APP_KEY` 与兼容的表结构。生产环境不要执行 `migrate:fresh` 或删除表的回滚。
+- 关注 HTTP 5xx/429 比例、worker 内存、调度执行、失败审计码与备份时间。`/up` 只能证明应用已启动。
+- 内容下架请求应私下处理并保留最简决策记录；不要承诺删除第三方副本。
 
 ## 许可证
 

@@ -116,7 +116,15 @@ CI requires exactly 100% PHPUnit line coverage for `app/`, with no excluded file
 
 The [production image](Dockerfile) runs PHP 8.4 with Apache as a non-root user on port 8080. It contains no secrets and no development dependencies, and it neither starts a scheduler nor migrates automatically. CI builds the image and exercises it against a disposable PostgreSQL 18 database.
 
-Runtime secrets, TLS and proxies, persistent locks, migrations, health checks, backups and rollback are covered by the [deployment runbook](docs/operations/deployment.md). For non-Docker deployments, run `composer install --no-dev` and `composer check-platform-reqs --no-dev` with the production PHP executable. `/up` confirms that the application boots; it does not prove database availability or synchronization freshness.
+Runtime secrets, TLS and proxies, persistent locks, migrations, health checks, backups and rollback are summarized under [Operations](#operations). For non-Docker deployments, run `composer install --no-dev` and `composer check-platform-reqs --no-dev` with the production PHP executable. `/up` confirms that the application boots; it does not prove database availability or synchronization freshness.
+
+## Operations
+
+- Run `schedule:run` once per minute on a single scheduler host. The overlap lock uses the file cache, so `storage/framework/cache/data` must be persistent and shared across releases on that host.
+- Back up with `pg_dump --format=custom` and prove recovery by restoring into a separate database, then checking migration status and row counts. Keep `APP_KEY` outside the database backup.
+- Roll back by restoring the previously verified image digest with the same `APP_KEY` and a compatible schema. Never run `migrate:fresh` or table-dropping rollbacks against production.
+- Watch HTTP 5xx and 429 rates, worker memory, scheduler executions, failed audit codes and backup age. `/up` only proves that the application boots.
+- Handle content takedown requests privately with a minimal decision record; do not promise removal from third-party copies.
 
 ## License
 

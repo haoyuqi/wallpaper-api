@@ -16,6 +16,7 @@ rotate them; deleting a file does not remove secrets from Git history or copies.
 
 The service is public and read-only. CORS and IP rate limits are not authentication
 or infrastructure billing caps. Report unsafe error disclosure, unintended
-upstream requests and integrity problems as security concerns. See the
-[deployment runbook](docs/operations/deployment.md) for operational boundaries and
-content/takedown handling.
+upstream requests and integrity problems as security concerns. Deployment,
+backup and rollback boundaries are summarized in the [README](README.md#operations).
+Content takedown requests belong in private correspondence with a minimal decision
+record.
