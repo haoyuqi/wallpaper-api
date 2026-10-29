@@ -61,6 +61,19 @@ final class LegacyArchiveGuardTest extends TestCase
                 // GitHub needs job-level contents: write to enable auto-merge. This is the only
                 // exception that handles pull requests; it must never check out their code.
                 self::assertStringNotContainsString('actions/checkout', $contents, "Workflow {$filePath} is privileged and must not check out code.");
+            } elseif (basename($filePath) === 'release.yml') {
+                // Publishing is the only write and happens after every check passes for a
+                // canonical tag on master. Pull request paths never reach this workflow.
+                $publishStart = strpos($contents, "\n  publish:");
+                self::assertNotFalse($publishStart, "Workflow {$filePath} must keep a publish job.");
+                $publish = substr($contents, $publishStart);
+                self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', substr($contents, 0, $publishStart), "Workflow {$filePath} must keep validation and note jobs read-only.");
+                self::assertSame(1, preg_match_all('/contents:\s*write\b/', $publish), "Workflow {$filePath} must request contents write only for publishing.");
+                self::assertStringContainsString("tags: ['v*']", $contents);
+                self::assertStringContainsString('needs: [validate, checks, notes]', $publish);
+                self::assertStringContainsString("if: github.event_name == 'push'", $publish);
+                self::assertStringContainsString('--verify-tag', $publish);
+                self::assertStringContainsString('persist-credentials: false', $contents);
             } elseif (basename($filePath) === 'coverage-badge.yml') {
                 // Badge publishing reads artifacts only from successful CI runs on this repo's
                 // default branch and checks out trusted code with credentials disabled.

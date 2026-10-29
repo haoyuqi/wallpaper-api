@@ -2,6 +2,7 @@ name: CI
 
 on:
   workflow_dispatch:
+  workflow_call:
   schedule:
     # Daily at 03:34 Asia/Shanghai (19:34 UTC on the previous day).
     - cron: '34 19 * * *'
@@ -20,6 +21,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-script-tests:
+    name: Release script tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s .github/scripts -p "test_*.py"
+
   lint:
     name: Code Quality & Lint
     runs-on: ubuntu-latest
@@ -268,7 +281,7 @@ jobs:
   result:
     name: CI result
     if: ${{ always() }}
-    needs: [lint, test, postgres-test, container]
+    needs: [release-script-tests, lint, test, postgres-test, container]
     runs-on: ubuntu-latest
     env:
       MIN_LINE_COVERAGE: '100'
@@ -291,16 +304,18 @@ jobs:
           python3 .github/scripts/ci-summary.py render api
       - name: Require every check to succeed
         env:
+          SCRIPT_RESULT: ${{ needs.release-script-tests.result }}
           LINT_RESULT: ${{ needs.lint.result }}
           TEST_RESULT: ${{ needs.test.result }}
           POSTGRES_RESULT: ${{ needs.postgres-test.result }}
           CONTAINER_RESULT: ${{ needs.container.result }}
         run: |
+          echo "Release script tests: $SCRIPT_RESULT"
           echo "Code Quality & Lint: $LINT_RESULT"
           echo "PHPUnit: $TEST_RESULT"
           echo "PostgreSQL persistence: $POSTGRES_RESULT"
           echo "Production container smoke test: $CONTAINER_RESULT"
-          for result in "$LINT_RESULT" "$TEST_RESULT" "$POSTGRES_RESULT" "$CONTAINER_RESULT"; do
+          for result in "$SCRIPT_RESULT" "$LINT_RESULT" "$TEST_RESULT" "$POSTGRES_RESULT" "$CONTAINER_RESULT"; do
             if [[ "$result" != "success" ]]; then
               echo "::error::Every required job must succeed."
               exit 1

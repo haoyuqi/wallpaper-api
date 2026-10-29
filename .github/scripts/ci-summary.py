@@ -79,7 +79,8 @@ def render(repo):
         data[item["name"]] = item
 
     if repo == "api":
-        jobs = [("Code Quality & Lint", "lint"), ("SQLite PHPUnit", "test"),
+        jobs = [("Release script tests", "release-script-tests"),
+                ("Code Quality & Lint", "lint"), ("SQLite PHPUnit", "test"),
                 ("PostgreSQL 18 persistence and rollback", "postgres-test"),
                 ("PostgreSQL 18 production container smoke", "container")]
         suites = [("SQLite", "sqlite"), ("PostgreSQL 18", "postgres-18")]
