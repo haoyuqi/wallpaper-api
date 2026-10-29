@@ -3,6 +3,8 @@ import http.client
 import io
 import json
 import socket
+import subprocess
+import tempfile
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -19,29 +21,87 @@ class ReleaseNotesTest(unittest.TestCase):
         sleeper.start()
         self.addCleanup(sleeper.stop)
 
-    def test_timeout_recovers_on_third_attempt(self):
-        response = io.BytesIO(json.dumps({'choices': [{'message': {'content': 'Recovered'}}]}).encode())
-        with patch.object(notes.HTTP, 'open', side_effect=[TimeoutError(), TimeoutError(), response]) as call:
-            self.assertEqual('Recovered', notes.complete('https://example.test/v1', 'key', 'model', '', ''))
-        self.assertEqual(3, call.call_count)
-
     def test_transient_failures_stop_after_three_attempts_without_logs(self):
-        for failure in [TimeoutError('private endpoint'), urllib.error.URLError(socket.gaierror('private endpoint')),
-                        http.client.IncompleteRead(b'private response')]:
+        for failure in [urllib.error.URLError(socket.gaierror('private endpoint'))]:
             with self.subTest(failure=type(failure).__name__), patch.object(notes.HTTP, 'open', side_effect=failure) as call, patch('sys.stderr', new_callable=io.StringIO) as log:
                 with self.assertRaises(notes.GenerationError):
                     notes.complete('https://example.test/v1', 'secret', 'model', '', '')
                 self.assertEqual(3, call.call_count)
                 self.assertEqual('', log.getvalue())
 
-    def test_public_warning_never_prints_error_details(self):
-        with patch.object(notes, 'complete', side_effect=notes.GenerationError('private endpoint secret')), patch('sys.stderr', new_callable=io.StringIO) as log:
-            notes.generate(['fix: example'], ('url', 'key', 'model'))
-        self.assertNotIn('private endpoint secret', log.getvalue())
+    def context(self):
+        return {'sources': [{'id': 'pr:1', 'title': 'fix: behavior', 'body': 'Full description',
+                             'url': 'https://github.com/owner/repo/pull/1'}], 'runtime_changes': {}}
+
+    def content(self):
+        return json.dumps({'entries': [{'category': 'Fixes', 'sources': ['pr:1'],
+                                       'en': 'Fix behavior.', 'zh': '修复行为异常。'}]}, ensure_ascii=False)
+
+    def test_one_request_returns_both_languages_and_complete_sources(self):
+        context = self.context()
+        context['sources'][0]['body'] = 'full body ' * 20000
+        with patch.object(notes, 'complete', return_value=self.content()) as call:
+            result = notes.generate(context, ('https://example.test/v1', 'private-key', 'private-model'))
+        call.assert_called_once()
+        self.assertEqual(context, json.loads(call.call_args.args[-1]))
+        self.assertIn('<!-- lang:zh -->', result)
+        self.assertIn('修复行为异常。', result)
+        self.assertIn('完整仓库资料', notes.BILINGUAL_PROMPT)
+        self.assertIn('来源覆盖不是实现细节覆盖', notes.BILINGUAL_PROMPT)
+
+    def test_missing_configuration_and_generation_failure_have_no_fallback(self):
+        with patch.object(notes, 'complete') as call:
+            with self.assertRaises(notes.GenerationError):
+                notes.generate(self.context(), ('', '', ''))
+            call.assert_not_called()
+        for failure in [notes.GenerationError('invalid_response'), ValueError('private detail')]:
+            with patch.object(notes, 'complete', side_effect=failure) as call:
+                with self.assertRaises(ValueError):
+                    notes.generate(self.context(), ('url', 'private-key', 'private-model'))
+                call.assert_called_once()
+
+    def test_invalid_content_or_configuration_echo_stops_generation(self):
+        for content in ['private-key', '<!-- lang:zh -->', '{}', 'English only']:
+            with patch.object(notes, 'complete', return_value=content) as call:
+                with self.assertRaises(ValueError):
+                    notes.generate(self.context(), ('https://example.test/v1', 'private-key', 'private-model'))
+                call.assert_called_once()
+
+    def test_timeout_disconnect_and_unknown_network_errors_never_retry(self):
+        for failure in [TimeoutError(), http.client.IncompleteRead(b'partial'),
+                        http.client.RemoteDisconnected(), ConnectionResetError(),
+                        urllib.error.URLError('unknown'), urllib.error.URLError(TimeoutError())]:
+            with self.subTest(failure=type(failure).__name__), patch.object(notes.HTTP, 'open', side_effect=failure) as call:
+                with self.assertRaises(notes.GenerationError):
+                    notes.complete('https://example.test/v1', 'key', 'model', '', '')
+                self.assertEqual(1, call.call_count)
+
+    def test_truncated_or_missing_finish_reason_never_retries(self):
+        for reason in ['length', None, 'content_filter']:
+            response = io.BytesIO(json.dumps({'choices': [{'finish_reason': reason, 'message': {'content': self.content()}}]}).encode())
+            with patch.object(notes.HTTP, 'open', return_value=response) as call:
+                with self.assertRaises(notes.GenerationError):
+                    notes.complete('https://example.test/v1', 'key', 'model', '', '')
+                call.assert_called_once()
+
+    def test_transport_limit_fails_without_sending_or_shortening(self):
+        with patch.object(notes.HTTP, 'open') as call:
+            with self.assertRaises(notes.GenerationError):
+                notes.complete('https://example.test/v1', 'key', 'model', '', 'a' * 1_000_001)
+            call.assert_not_called()
+
+    def test_cli_failure_never_writes_publishable_notes_or_private_details(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'notes.md'
+            with patch('sys.argv', ['release-notes.py', 'generate', '--tag', 'v1.2.3', '--output', str(output)]), patch.object(notes, 'validate', return_value='a' * 40), patch.object(notes, 'git', return_value=''), patch.object(notes, 'release_context', side_effect=ValueError('private endpoint secret')), patch('sys.stderr', new_callable=io.StringIO) as log:
+                with self.assertRaises(SystemExit):
+                    notes.main()
+            self.assertFalse(output.exists())
+            self.assertNotIn('private', log.getvalue())
 
     def test_server_error_recovers_on_retry(self):
         failure = urllib.error.HTTPError('url', 503, 'unavailable', {}, io.BytesIO(b'private response'))
-        response = io.BytesIO(json.dumps({'choices': [{'message': {'content': 'Recovered'}}]}).encode())
+        response = io.BytesIO(json.dumps({'choices': [{'finish_reason': 'stop', 'message': {'content': 'Recovered'}}]}).encode())
         with patch.object(notes.HTTP, 'open', side_effect=[failure, response]) as call:
             self.assertEqual('Recovered', notes.complete('https://example.test/v1', 'key', 'model', '', ''))
         self.assertEqual(2, call.call_count)
@@ -60,7 +120,7 @@ class ReleaseNotesTest(unittest.TestCase):
         self.assertEqual('v3.0.2', notes.previous_tag('v3.0.3', ['3.0.2', 'v3.0.2']))
 
     def test_endpoint_and_request_use_high(self):
-        response = io.BytesIO(json.dumps({'choices': [{'message': {'content': ' Notes '}}]}).encode())
+        response = io.BytesIO(json.dumps({'choices': [{'finish_reason': 'stop', 'message': {'content': ' Notes '}}]}).encode())
         with patch.object(notes.HTTP, 'open', return_value=response) as request:
             self.assertEqual('Notes', notes.complete('https://example.test/v1/', 'secret', 'model', 'system', 'input'))
         outgoing = request.call_args.args[0]
@@ -75,65 +135,8 @@ class ReleaseNotesTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 notes.complete(base, 'key', 'model', '', '')
 
-    def test_both_generation_calls_request_high_and_join_languages(self):
-        with patch.object(notes, 'complete', side_effect=['English', '中文']) as call:
-            result = notes.generate(['fix: repair login'], ('https://example.test/v1', 'key', 'model'))
-        self.assertEqual('English\n\n<!-- lang:zh -->\n\n中文\n', result)
-        self.assertEqual(2, call.call_count)
-        self.assertIn('English', call.call_args.args[-1])
-
-    def test_english_prompt_preserves_engineering_changes(self):
-        context = {'commits': [{'subject': 'test: require complete coverage'}]}
-        with patch.object(notes, 'complete', side_effect=['English', '中文']) as call:
-            notes.generate(context, ('https://example.test/v1', 'key', 'model'))
-        prompt = call.call_args_list[0].args[-2]
-        self.assertIn('do not omit those as maintenance', prompt)
-        self.assertIn('diagnostic-only', prompt)
-        self.assertIn('file-format change', prompt)
-
-    def test_generation_sends_commit_files_and_version_highlights(self):
-        context = {
-            'commits': [{
-                'subject': 'fix(security): require patched runtimes',
-                'body': 'Raise minimum versions.',
-                'changed_paths': ['composer.json'],
-            }],
-            'changed_files': [{'path': 'composer.json', 'additions': 1, 'deletions': 1}],
-            'version_highlights': {'changed_requirements': {'php': {'before': '^8.4', 'after': '~8.4.27'}}},
-        }
-        with patch.object(notes, 'complete', side_effect=['English', '中文']) as call:
-            notes.generate(context, ('https://example.test/v1', 'key', 'model'))
-        source = json.loads(call.call_args_list[0].args[-1])
-        self.assertEqual('Raise minimum versions.', source['commits'][0]['body'])
-        self.assertEqual(['composer.json'], source['commits'][0]['changed_paths'])
-        self.assertEqual('~8.4.27', source['version_highlights']['changed_requirements']['php']['after'])
-
-    def test_generation_failure_falls_back_without_printing_exception(self):
-        with patch.object(notes, 'complete', side_effect=ValueError('secret endpoint')), patch('sys.stderr', new_callable=io.StringIO) as error:
-            result = notes.generate(['fix: repair login'], ('url', 'key', 'model'))
-        self.assertIn('- fix: repair login', result)
-        self.assertNotIn('secret endpoint', error.getvalue())
-        self.assertIn('Generation failed', error.getvalue())
-
-    def test_translation_failure_keeps_english(self):
-        with patch.object(notes, 'complete', side_effect=['English', TimeoutError()]), patch('sys.stderr', new_callable=io.StringIO):
-            self.assertEqual('English\n', notes.generate(['fix: a'], ('url', 'key', 'model')))
-
-    def test_incomplete_translation_keeps_english(self):
-        with patch.object(notes, 'complete', side_effect=[
-            'English',
-            notes.GenerationError('incomplete_response'),
-        ]), patch('sys.stderr', new_callable=io.StringIO) as error:
-            self.assertEqual('English\n', notes.generate(['fix: a'], ('url', 'key', 'model')))
-        self.assertNotIn('incomplete_response', error.getvalue())
-
-    def test_missing_configuration_falls_back(self):
-        with patch.object(notes, 'complete') as call, patch('sys.stderr', new_callable=io.StringIO):
-            self.assertIn('- fix: a', notes.generate(['fix: a'], ('', '', '')))
-        call.assert_not_called()
-
     def test_empty_or_malformed_responses_are_errors(self):
-        for payload in [{}, {'choices': [{'message': {'content': ' '}}]}, {'choices': [{'message': {'content': ['bad']}}]}]:
+        for payload in [{}, {'choices': ['bad']}, {'choices': [{'message': {'content': ' '}}]}, {'choices': [{'message': {'content': ['bad']}}]}]:
             with patch.object(notes.HTTP, 'open', return_value=io.BytesIO(json.dumps(payload).encode())):
                 with self.assertRaises(ValueError):
                     notes.complete('https://example.test/v1', 'key', 'model', '', '')
@@ -204,19 +207,6 @@ class ReleaseNotesTest(unittest.TestCase):
             notes.NoRedirect().redirect_request(notes.urllib.request.Request('https://example.test'), None, 302, 'found', {}, 'https://other.test')
         raised.exception.close()
 
-    def test_output_cannot_echo_configuration_or_inject_language_separator(self):
-        for output in ['secret-key', 'https://example.test/v1', 'model-id', '<!-- lang:zh -->']:
-            with patch.object(notes, 'complete', return_value=output), patch('sys.stderr', new_callable=io.StringIO):
-                result = notes.generate(['fix: a'], ('https://example.test/v1', 'secret-key', 'model-id'))
-            self.assertIn('- fix: a', result)
-
-    def test_oversized_context_falls_back_before_request(self):
-        with patch.object(notes, 'complete', return_value='Done') as call, patch('sys.stderr', new_callable=io.StringIO) as error:
-            result = notes.generate(['a' * 5000] * 1000, ('url', 'key', 'model'))
-        self.assertIn('- ' + 'a' * 500, result)
-        self.assertNotIn('context_too_large', error.getvalue())
-        call.assert_not_called()
-
     def test_only_direct_dependencies_are_selected_from_lockfile(self):
         manifest = {'require': {'livewire/livewire': '^4.4'}, 'require-dev': {'phpunit/phpunit': '^12'}}
         lock = {
@@ -239,9 +229,214 @@ class ReleaseNotesTest(unittest.TestCase):
                     'runtime_versions': {'node': ['^24.22.1'], 'php': ['8.4']},
                     'minimum_line_coverage': ['100'],
                 },
-                notes.workflow_highlights('a' * 40, ['.github/workflows/tests.yml']),
+                notes.workflow_highlights('a' * 40, ['.github/workflows/ci.yml']),
             )
 
+
+REPO = 'haoyuqi/wallpaper-api'
+A, B, C = 'a' * 40, 'b' * 40, 'c' * 40
+
+
+def pull(number=1, merge=B, body='full description'):
+    return {'number': number, 'title': 'fix: behavior', 'body': body,
+            'merged_at': '2026-10-29T00:00:00Z', 'merge_commit_sha': merge,
+            'base': {'repo': {'full_name': REPO}}}
+
+
+class SourcesTest(unittest.TestCase):
+    def history(self, *args):
+        if args[0] == 'log':
+            return A + '\n' + B
+        return 'fix: behavior\0' + 'complete body ' * 500
+
+    def test_collects_full_pr_once_and_preserves_unmatched_commit(self):
+        description = 'complete PR body ' * 1000
+        with patch.object(notes, 'github_pulls', side_effect=[[], [pull(body=description)]]):
+            result = notes.collect_sources('v1..v2', REPO, self.history)
+        self.assertEqual(['commit:' + A, 'pr:1'], [row['id'] for row in result])
+        self.assertEqual('complete body ' * 500, result[0]['body'])
+        self.assertEqual(description, result[1]['body'])
+        self.assertEqual('https://github.com/' + REPO + '/pull/1', result[1]['url'])
+
+    def test_deduplicates_pr_associated_with_multiple_commits(self):
+        with patch.object(notes, 'github_pulls', return_value=[pull()]):
+            result = notes.collect_sources('range', REPO, self.history)
+        self.assertEqual(1, len(result))
+        self.assertEqual('pr:1', result[0]['id'])
+        self.assertEqual([A, B], result[0]['commits'])
+
+    def test_unmerged_later_and_foreign_prs_remain_direct_commits(self):
+        unmerged = pull(); unmerged['merged_at'] = None
+        foreign = pull(); foreign['base']['repo']['full_name'] = 'other/repo'
+        with patch.object(notes, 'github_pulls', return_value=[unmerged, foreign, pull(merge=C)]):
+            result = notes.collect_sources('range', REPO, self.history)
+        self.assertEqual(['commit:' + A, 'commit:' + B], [row['id'] for row in result])
+
+    def test_includes_merge_commits_in_history_and_rejects_api_failure(self):
+        with patch.object(notes, 'github_pulls', side_effect=ValueError('failure')):
+            with self.assertRaises(ValueError):
+                notes.collect_sources('range', REPO, self.history)
+        calls = []
+        def history(*args):
+            calls.append(args)
+            return self.history(*args)
+        with patch.object(notes, 'github_pulls', return_value=[]):
+            notes.collect_sources('range', REPO, history)
+        self.assertNotIn('--no-merges', calls[0])
+
+    def test_github_api_uses_all_pages_and_discards_stderr(self):
+        pages = json.dumps([[pull()], [pull(number=2)]]).encode()
+        with patch.object(notes.subprocess, 'check_output', return_value=pages) as run:
+            self.assertEqual(2, len(notes.github_pulls(REPO, A)))
+        command = run.call_args.args[0]
+        self.assertIn('--paginate', command)
+        self.assertIn('--slurp', command)
+        self.assertEqual(subprocess.DEVNULL, run.call_args.kwargs['stderr'])
+
+    def test_bad_api_response_and_repository_are_rejected(self):
+        for raw in [b'{}', b'[{}]', b'[[1]]']:
+            with patch.object(notes.subprocess, 'check_output', return_value=raw):
+                with self.assertRaises(ValueError):
+                    notes.github_pulls(REPO, A)
+        with patch.object(notes.subprocess, 'check_output') as run:
+            with self.assertRaises(ValueError):
+                notes.collect_sources('range', '../unsafe', self.history)
+            run.assert_not_called()
+
+    def test_runtime_requirements_include_add_change_and_removal(self):
+        before = {'require': {'php': '^8.4', 'ext-old': '*', 'vendor/package': '^1'}}
+        after = {'require': {'php': '~8.4.27 || ^8.5.12', 'ext-new': '*', 'vendor/package': '^2'}}
+        def history(*args):
+            return json.dumps(before if args[-1].startswith('old:') else after)
+        result = notes.runtime_changes('old', 'new', history)
+        self.assertEqual({'before': '^8.4', 'after': '~8.4.27 || ^8.5.12'}, result['php'])
+        self.assertEqual({'before': '*', 'after': None}, result['ext-old'])
+        self.assertEqual({'before': None, 'after': '*'}, result['ext-new'])
+        self.assertNotIn('vendor/package', result)
+
+    def test_runtime_manifest_is_required_and_strict(self):
+        for raw in ['invalid', '[]', '{"require": []}', '{"require":{"php":8.4}}']:
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                notes.runtime_changes(None, 'new', lambda *args: raw)
+        with self.assertRaises(subprocess.CalledProcessError):
+            notes.runtime_changes('old', 'new', lambda *args: (_ for _ in ()).throw(subprocess.CalledProcessError(1, 'git')))
+
+    def test_initial_release_and_unchanged_runtime(self):
+        manifest = lambda *args: '{"require":{"php":"^8.4"}}'
+        self.assertEqual({'php': {'before': None, 'after': '^8.4'}}, notes.runtime_changes(None, 'new', manifest))
+        self.assertEqual({}, notes.runtime_changes('old', 'new', manifest))
+
+
+class GitFixtureTest(unittest.TestCase):
+    def test_merge_squash_and_rebased_commits_use_actual_range(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def git(*args):
+                return subprocess.check_output(['git', '-C', directory, *args], text=True, stderr=subprocess.DEVNULL).rstrip('\n')
+            git('init', '-b', 'master')
+            git('config', 'user.name', 'Fixture')
+            git('config', 'user.email', 'fixture@example.test')
+            git('commit', '--allow-empty', '-m', 'initial')
+            git('tag', 'v1.0.0')
+            git('checkout', '-b', 'feature')
+            Path(directory, 'a').write_text('feature')
+            git('add', 'a'); git('commit', '-m', 'feature commit', '-m', 'full commit body')
+            feature = git('rev-parse', 'HEAD')
+            git('checkout', 'master'); git('merge', '--no-ff', 'feature', '-m', 'Merge PR')
+            merge = git('rev-parse', 'HEAD')
+            git('commit', '--allow-empty', '-m', 'squashed feature', '-m', 'squash body')
+            squash = git('rev-parse', 'HEAD')
+            git('commit', '--allow-empty', '-m', 'rebased direct', '-m', 'rebase full body')
+            direct = git('rev-parse', 'HEAD')
+            def prs(repo, sha):
+                if sha in (feature, merge):
+                    return [pull(1, merge=merge)]
+                if sha == squash:
+                    return [pull(2, merge=squash)]
+                return []
+            with patch.object(notes, 'github_pulls', side_effect=prs):
+                rows = notes.collect_sources('v1.0.0..HEAD', REPO, git)
+            self.assertEqual(['pr:1', 'pr:2', 'commit:' + direct], [row['id'] for row in rows])
+            self.assertEqual([feature, merge], rows[0]['commits'])
+            self.assertEqual('rebase full body', rows[2]['body'])
+
+
+class RenderTest(unittest.TestCase):
+    def setUp(self):
+        self.sources = [{'id': 'pr:1', 'url': 'https://github.com/owner/repo/pull/1'}]
+        self.entry = {'category': 'Fixes', 'sources': ['pr:1'], 'en': 'Fix stale requests.', 'zh': '修复旧请求覆盖新结果的问题。'}
+
+    def result(self, entry=None, **kwargs):
+        return notes.render_notes(json.dumps({'entries': [entry or self.entry]}, ensure_ascii=False), self.sources, **kwargs)
+
+    def test_renders_bilingual_notes_and_program_owned_sources(self):
+        result = self.result()
+        self.assertIn('### Fixes\n\n- Fix stale requests.', result)
+        self.assertIn('<!-- lang:zh -->\n\n### 问题修复', result)
+        self.assertEqual(2, result.count('[#1](https://github.com/owner/repo/pull/1)'))
+
+    def test_missing_unknown_and_uncovered_sources_fail(self):
+        for ids in [[], ['pr:2']]:
+            with self.subTest(ids=ids), self.assertRaises(ValueError):
+                self.result({**self.entry, 'sources': ids})
+        with self.assertRaises(ValueError):
+            notes.render_notes(json.dumps({'entries': [self.entry]}), self.sources + [{'id': 'pr:2', 'url': 'url'}])
+
+    def test_empty_one_language_wrong_type_and_unknown_category_fail(self):
+        for changed in [{'zh': ''}, {'en': ' '}, {'en': []}, {'sources': 'pr:1'}, {'category': 'Unknown'}, {'zh': 'only English'}]:
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                self.result({**self.entry, **changed})
+
+    def test_invalid_json_fenced_json_empty_and_wrong_shape_fail(self):
+        for content in ['bad', '```json\n{}\n```', '{}', '[]', '{"entries":[]}', '{"entries":[1]}']:
+            with self.subTest(content=content), self.assertRaises(ValueError):
+                notes.render_notes(content, self.sources)
+
+    def test_injected_markdown_links_separator_and_html_are_rejected(self):
+        for text in ['text\n### New heading', '<!-- lang:zh -->', '[link](https://evil.test)', '<img src=x>', '![image](x)']:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                self.result({**self.entry, 'en': text})
+
+    def test_exact_runtime_constraint_and_removal_rendered_in_both_languages(self):
+        changes = {'php': {'before': '^8.4', 'after': '~8.4.27 || ^8.5.12'}, 'ext-old': {'before': '*', 'after': None}}
+        result = self.result(requirements=changes)
+        self.assertEqual(2, result.count('`~8.4.27 || ^8.5.12`'))
+        self.assertIn('no longer required', result)
+        self.assertIn('不再要求', result)
+
+    def test_source_can_be_combined_without_omission(self):
+        entry = {**self.entry, 'sources': ['pr:1', 'commit:' + 'a' * 40]}
+        self.sources.append({'id': 'commit:' + 'a' * 40, 'url': 'https://github.com/owner/repo/commit/' + 'a' * 40})
+        self.assertIn('[aaaaaaa]', self.result(entry))
+
+
+class WorkflowTest(unittest.TestCase):
+    def test_notes_waits_for_checks_and_allows_dispatch_preview(self):
+        text = Path(__file__).parents[1].joinpath('workflows/release.yml').read_text()
+        notes = text.split('  notes:\n', 1)[1].split('  publish:\n', 1)[0]
+        self.assertIn('needs: [validate, checks]', notes)
+        expression = "!cancelled() && needs.validate.result == 'success' && (github.event_name == 'workflow_dispatch' || needs.checks.result == 'success')"
+        self.assertIn('${{ ' + expression + ' }}', notes)
+        self.assertIn('pull-requests: read', notes)
+        self.assertIn('GH_TOKEN: ${{ github.token }}', notes)
+        self.assertNotIn('contents: write', notes)
+        cases = [
+            (False, 'success', 'success', 'push', True),
+            (False, 'success', 'failure', 'push', False),
+            (False, 'success', 'skipped', 'push', False),
+            (False, 'success', 'cancelled', 'push', False),
+            (False, 'failure', 'success', 'push', False),
+            (False, 'success', 'skipped', 'workflow_dispatch', True),
+            (False, 'failure', 'skipped', 'workflow_dispatch', False),
+            (False, 'skipped', 'skipped', 'workflow_dispatch', False),
+            (True, 'success', 'success', 'push', False),
+            (True, 'success', 'skipped', 'workflow_dispatch', False),
+        ]
+        for cancelled, validation, checks, event, expected in cases:
+            condition = expression.replace('!cancelled()', str(not cancelled)).replace('needs.validate.result', repr(validation)).replace('needs.checks.result', repr(checks)).replace('github.event_name', repr(event)).replace('&&', 'and').replace('||', 'or')
+            self.assertEqual(expected, eval(condition, {'__builtins__': {}}, {}))
+        publish = text.split('  publish:\n', 1)[1]
+        self.assertIn('needs: [validate, checks, notes]', publish)
+        self.assertIn("if: github.event_name == 'push'", publish)
 
 
 class TagValidationTest(unittest.TestCase):

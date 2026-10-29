@@ -21,7 +21,7 @@ in issues, PRs or the private Project.
 | CORS, request limits and broad queries | [CORS configuration](../config/cors.php), [AppServiceProvider](../app/Providers/AppServiceProvider.php), [routes/api.php](../routes/api.php), [api.md](api.md) | [PublicApiHardeningTest](../tests/Feature/PublicApiHardeningTest.php) |
 | Test databases and CI | [tests/TestCase.php](../tests/TestCase.php), [phpunit.xml](../phpunit.xml), [CI](../.github/workflows/ci.yml) | [TestDatabaseSafetyTest](../tests/Feature/TestDatabaseSafetyTest.php) |
 | CI summary and coverage gate | [ci-summary.py](../.github/scripts/ci-summary.py), [CI](../.github/workflows/ci.yml) | [test_ci_summary.py](../.github/scripts/tests/test_ci_summary.py) |
-| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [README operations](../README.md#operations) | [Container smoke checks](../.github/scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), CI |
+| Production packaging and release gates | [Dockerfile](../Dockerfile), [docker](../docker), [README operations](../README.md#operations), [release.yml](../.github/workflows/release.yml), [release-notes.py](../.github/scripts/release-notes.py) | [Container smoke checks](../.github/scripts/smoke-container.sh), [Larastan configuration](../phpstan.neon), [test_release_notes.py](../.github/scripts/test_release_notes.py), CI |
 | Repository file and workflow guards | [.gitignore](../.gitignore), [CI](../.github/workflows/ci.yml) | [LegacyArchiveGuardTest](../tests/Feature/LegacyArchiveGuardTest.php) |
 | Health check `/up` | [bootstrap/app.php](../bootstrap/app.php) | [HealthTest](../tests/Feature/HealthTest.php) |
 
@@ -168,6 +168,28 @@ HTTP smoke tests with PostgreSQL. The image runs non-root and packages productio
 dependencies only; it starts no scheduler and performs no automatic migration.
 See [README](../README.md#getting-started) and `phpunit.xml` for the test
 database configuration.
+
+Tagging a commit reachable from `master` with a canonical `vX.Y.Z` tag runs
+[.github/workflows/release.yml](../.github/workflows/release.yml): it validates
+tag ancestry, runs the reusable `ci.yml` workflow, generates bilingual
+release notes via `.github/scripts/release-notes.py`, and publishes the GitHub
+release once all checks pass. Generation starts after CI succeeds. Sources are
+the complete titles and descriptions of merged PRs associated with commits in
+the actual tag range, plus full messages of unmatched commits, including merges.
+PRs are deduplicated; sources are neither compressed nor truncated. One model
+request produces structured English and Chinese entries. Local checks require
+valid structure, nonempty bilingual text and coverage of every source ID; they
+do not establish semantic correctness. The program renders source links and
+exact added, changed or removed Composer runtime/platform constraints.
+DNS/connect failures, HTTP 429 rate limits and HTTP 500/502/503/504 responses
+get at most three attempts with 2- and 4-second backoff; exhausted quotas,
+authentication errors, timeouts, incomplete responses and invalid generated
+content are not retried. Missing configuration or any generation/validation
+failure stops publication; there is no fallback or second AI review call.
+Requests exceeding the existing 1,000,000-byte transport limit fail without
+shortening sources. Public failure logs contain generic notices only.
+Manual `workflow_dispatch` runs skip CI and generate the `release-notes`
+artifact for preview without publishing.
 
 ## Documentation maintenance
 
