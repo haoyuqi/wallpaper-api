@@ -23,22 +23,31 @@ concurrency:
 jobs:
   release-script-tests:
     name: Release script tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14.10'
       - env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 -m unittest discover -s .github/scripts -p "test_*.py"
 
   lint:
     name: Code Quality & Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14.10'
 
       - name: Test CI coverage gate
         run: python3 .github/scripts/tests/test_ci_summary.py
@@ -46,9 +55,9 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
-          php-version: '8.4'
+          php-version: '8.4.27'
           coverage: none
-          tools: composer:v2
+          tools: composer:2.10.3
         env:
           update: 'true'
 
@@ -86,20 +95,25 @@ jobs:
         run: composer audit --locked --no-interaction
 
   test:
-    name: PHPUnit (PHP 8.4)
-    runs-on: ubuntu-latest
+    name: PHPUnit (PHP 8.4.27)
+    runs-on: ubuntu-26.04
     env:
       MIN_LINE_COVERAGE: '100'
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14.10'
+
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
-          php-version: '8.4'
+          php-version: '8.4.27'
           coverage: pcov
-          tools: composer:v2
+          tools: composer:2.10.3
         env:
           update: 'true'
 
@@ -111,8 +125,8 @@ jobs:
         uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-php-8.4-composer-
+          key: ${{ runner.os }}-php-8.4.27-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-8.4.27-composer-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -152,11 +166,11 @@ jobs:
           retention-days: 7
 
   postgres-test:
-    name: PostgreSQL persistence (PHP 8.4)
-    runs-on: ubuntu-latest
+    name: PostgreSQL persistence (PHP 8.4.27)
+    runs-on: ubuntu-26.04
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.6@sha256:3a4264520e121176619f54ff867d12774bc81e95e7b84db58d63bccdb6144b81
         env:
           POSTGRES_USER: wallpaper_test
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -183,13 +197,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14.10'
+
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
-          php-version: '8.4'
+          php-version: '8.4.27'
           coverage: none
           extensions: pdo_pgsql
-          tools: composer:v2
+          tools: composer:2.10.3
         env:
           update: 'true'
 
@@ -201,8 +220,8 @@ jobs:
         uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-php-8.4-composer-
+          key: ${{ runner.os }}-php-8.4.27-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-php-8.4.27-composer-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -232,11 +251,11 @@ jobs:
 
   container:
     name: Production container smoke test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18.6@sha256:3a4264520e121176619f54ff867d12774bc81e95e7b84db58d63bccdb6144b81
         env:
           POSTGRES_USER: wallpaper_test
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -282,7 +301,7 @@ jobs:
     name: CI result
     if: ${{ always() }}
     needs: [release-script-tests, lint, test, postgres-test, container]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       MIN_LINE_COVERAGE: '100'
     timeout-minutes: 5
@@ -296,6 +315,10 @@ jobs:
           pattern: ci-data-*
           path: ci-data
           merge-multiple: true
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14.10'
       - name: Write run summary
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
