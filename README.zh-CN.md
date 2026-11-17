@@ -114,6 +114,8 @@ CI 要求 `app/` 的 PHPUnit 行覆盖率恰好为 100%，不排除任何文件�
 
 ## 部署
 
+[壁纸服务 Compose 示例](deploy/README.md)将前端、API、唯一调度器及可选 PostgreSQL 组合部署。镜像版本和凭据写入被忽略的 `deploy/.env`，迁移需要显式执行。前端通过私有网络代理 `/api` 到 API；认证服务独立部署。
+
 [生产镜像](Dockerfile) 使用 PHP 8.4 与 Apache，以非 root 用户运行并监听 8080。镜像不含凭据与开发依赖，也不会自动启动调度器或执行迁移。CI 会构建镜像，并用一次性的 PostgreSQL 18 数据库验证它。
 
 运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份与回滚见[运维](#运维)一节。非 Docker 部署请使用生产 PHP 执行 `composer install --no-dev` 与 `composer check-platform-reqs --no-dev`。`/up` 只能确认应用已启动，不能证明数据库可用或同步数据是最新的。

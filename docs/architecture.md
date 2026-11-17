@@ -6,6 +6,12 @@ integration for external metadata. There is no additional repository layer.
 This document describes implemented behavior. Proposals and schedules belong
 in issues, PRs or the private Project.
 
+## Deployment map
+
+The [Compose project](../deploy/compose.yaml) runs independently published web and API images. The web container serves static assets and proxies `/api` to private `api:8080`. The separate `scheduler` container runs `php artisan schedule:work` using the same API image and persists file-cache overlap locks in `scheduler_cache`. The optional `bundled-db` profile starts PostgreSQL 18; otherwise `DB_HOST` selects an external PostgreSQL database. Migrations run explicitly, never at image startup. Authentication is deployed separately.
+
+The API release workflow validates a stable tag on `master`, runs CI, publishes and verifies an amd64/arm64 GHCR image (and updates `latest`) before creating a GitHub Release. An existing version image is reused only when its revision and both platforms match the tag; an inconsistent version fails without being overwritten. Manual dispatch only previews release notes. The frontend has its own release and image version.
+
 ## Find code by feature
 
 | Feature | Entry points and implementation | Tests |
@@ -172,8 +178,9 @@ database configuration.
 Tagging a commit reachable from `master` with a canonical `vX.Y.Z` tag runs
 [.github/workflows/release.yml](../.github/workflows/release.yml): it validates
 tag ancestry, runs the reusable `ci.yml` workflow, generates bilingual
-release notes via `.github/scripts/release-notes.py`, and publishes the GitHub
-release once all checks pass. Generation starts after CI succeeds. Sources are
+release notes via `.github/scripts/release-notes.py`, publishes the amd64/arm64
+GHCR image, and creates the GitHub Release after these steps succeed.
+Generation starts after CI succeeds. Sources are
 the complete titles and descriptions of merged PRs associated with commits in
 the actual tag range, plus full messages of unmatched commits, including merges.
 PRs are deduplicated; sources are neither compressed nor truncated. One model

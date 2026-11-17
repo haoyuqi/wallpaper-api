@@ -70,7 +70,12 @@ final class LegacyArchiveGuardTest extends TestCase
                 self::assertDoesNotMatchRegularExpression('/contents:\s*write\b/', substr($contents, 0, $publishStart), "Workflow {$filePath} must keep validation and note jobs read-only.");
                 self::assertSame(1, preg_match_all('/contents:\s*write\b/', $publish), "Workflow {$filePath} must request contents write only for publishing.");
                 self::assertStringContainsString("tags: ['v*']", $contents);
-                self::assertStringContainsString('needs: [validate, checks, notes]', $publish);
+                self::assertStringContainsString('needs: [validate, checks, notes, image]', $publish);
+                self::assertStringContainsString('packages: write', substr($contents, 0, $publishStart));
+                self::assertStringContainsString('--platform linux/amd64,linux/arm64', substr($contents, 0, $publishStart));
+                self::assertStringContainsString('Check an existing published version', substr($contents, 0, $publishStart));
+                self::assertStringContainsString('docker buildx imagetools inspect --raw', substr($contents, 0, $publishStart));
+                self::assertStringContainsString('python3 .github/scripts/verify-image.py', substr($contents, 0, $publishStart));
                 self::assertStringContainsString("if: github.event_name == 'push'", $publish);
                 self::assertStringContainsString('--verify-tag', $publish);
                 self::assertStringContainsString('persist-credentials: false', $contents);
