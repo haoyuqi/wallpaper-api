@@ -91,8 +91,21 @@ jobs:
           DB_CONNECTION: testing
           CACHE_STORE: array
 
+      - name: Install OSV-Scanner
+        env:
+          OSV_SCANNER_VERSION: v2.7.1
+          OSV_SCANNER_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+        run: |
+          curl -sSLo "$RUNNER_TEMP/osv-scanner" "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  $RUNNER_TEMP/osv-scanner" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/osv-scanner"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
       - name: Audit locked dependencies
         run: composer audit --locked --no-interaction
+
+      - name: Scan dependencies with OSV-Scanner
+        run: osv-scanner scan --lockfile composer.lock --format json --output-file osv-audit.json
 
   test:
     name: PHPUnit (PHP 8.4.27)
