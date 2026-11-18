@@ -163,9 +163,10 @@ cover the real installed command with a fake provider, services, persistence,
 scheduling, HTTP contracts and sanitized exceptions. The test base checks the
 dedicated connection before database traits can migrate; PostgreSQL tests require
 `wallpaper_api_test`. CI covers SQLite and PostgreSQL 18 on PHP 8.4.
-It also runs Larastan level 5, dependency audit and real production-container
-HTTP smoke tests with PostgreSQL. The image runs non-root and packages production
-dependencies only; it starts no scheduler and performs no automatic migration.
+It also runs Larastan level 5, two independent lockfile audits (Composer audit
+and an OSV-Scanner scan) and real production-container HTTP smoke tests with
+PostgreSQL. The image runs non-root and packages production dependencies only;
+it starts no scheduler and performs no automatic migration.
 See [README](../README.md#getting-started) and `phpunit.xml` for the test
 database configuration.
 

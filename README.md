@@ -106,7 +106,12 @@ php artisan schedule:list
 | `vendor/bin/pint --test` | Check formatting with the Laravel preset. |
 | `vendor/bin/phpstan analyse --no-progress --memory-limit=512M` | Run Larastan level 5 over `app/`, routing, bootstrap and database. |
 | `vendor/bin/phpunit` | Run the test suite against the dedicated testing connection. |
-| `composer audit --locked --no-interaction` | Audit locked production and development dependencies. |
+| `composer audit --locked --no-interaction` | Audit locked production and development dependencies with Composer's advisory database. |
+| `osv-scanner scan --lockfile composer.lock` | Scan the same lockfile against the OSV database in an additional CI step. |
+
+CI runs both lockfile audits in the `lint` job: `composer audit` keeps its Composer advisory check, and OSV-Scanner adds an additional step after it. A finding in either one fails the job. The scan writes `osv-audit.json` into the workspace, which is ignored by Git.
+
+To defer a specific advisory, add a root `osv-scanner.toml` with one `[[IgnoredVulns]]` table per advisory, each carrying `id`, `effectiveUntil` and `reason`, and add `--config osv-scanner.toml` to the scan step. Keep every entry time-boxed and remove it once the advisory is patched.
 
 The default local suite uses PostgreSQL and makes no Bing requests; SQLite is a quick alternative but skips PostgreSQL-specific assertions. Copy `.env.example` to `.env` and set `TEST_DB_USERNAME` and `TEST_DB_PASSWORD` there; `phpunit.xml` supplies the non-secret testing defaults and no `.env.testing` file is needed. The test base rejects any PostgreSQL database name other than `wallpaper_api_test`.
 

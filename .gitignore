@@ -16,6 +16,7 @@
 /.vscode
 /.zed
 /auth.json
+/osv-audit.json
 /public/storage
 /storage/*.key
 /storage/bing-wallpaper/**
