@@ -107,9 +107,11 @@ php artisan schedule:list
 | `vendor/bin/phpstan analyse --no-progress --memory-limit=512M` | 以 Larastan level 5 检查 `app/`、路由、启动配置与数据库定义。 |
 | `vendor/bin/phpunit` | 在专用测试连接上运行测试套件。 |
 | `composer audit --locked --no-interaction` | 使用 Composer 安全公告库审计锁定的生产与开发依赖。 |
-| `osv-scanner scan --lockfile composer.lock` | 用 OSV 数据库并行扫描同一个 lockfile。 |
+| `osv-scanner scan --lockfile composer.lock` | 用 OSV 数据库扫描同一个 lockfile，作为同一 job 内新增的步骤。 |
 
-CI 会对 lockfile 执行两项依赖审计：`composer audit` 保留原有的 Composer 公告检查，OSV-Scanner 增加一次独立的 OSV 扫描；任一发现都会让 lint 任务失败。
+CI 在 `lint` 任务中执行两项 lockfile 审计：`composer audit` 保留原有的 Composer 公告检查，OSV-Scanner 在其后新增一个步骤；任一发现都会让该任务失败。扫描会把 `osv-audit.json` 写入工作区，该文件已被 Git 忽略。
+
+若需延迟某条公告，在仓库根目录新建 `osv-scanner.toml`，每条公告写一个 `[[IgnoredVulns]]` 表，包含 `id`、`effectiveUntil` 与 `reason`，并在扫描步骤中加上 `--config osv-scanner.toml`。所有条目都应限时，公告修复后立即删除。
 
 本地默认套件使用 PostgreSQL，且不会请求真实 Bing；SQLite 可作为快速替代，但会跳过 PostgreSQL 专用断言。请把 `.env.example` 复制为 `.env`，并在其中设置 `TEST_DB_USERNAME` 与 `TEST_DB_PASSWORD`；`phpunit.xml` 提供非机密的测试默认值，无需 `.env.testing`。测试基类会拒绝 `wallpaper_api_test` 以外的 PostgreSQL 数据库名。
 
