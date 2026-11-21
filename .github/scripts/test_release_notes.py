@@ -435,7 +435,13 @@ class WorkflowTest(unittest.TestCase):
             condition = expression.replace('!cancelled()', str(not cancelled)).replace('needs.validate.result', repr(validation)).replace('needs.checks.result', repr(checks)).replace('github.event_name', repr(event)).replace('&&', 'and').replace('||', 'or')
             self.assertEqual(expected, eval(condition, {'__builtins__': {}}, {}))
         publish = text.split('  publish:\n', 1)[1]
-        self.assertIn('needs: [validate, checks, notes]', publish)
+        self.assertIn('needs: [validate, checks, notes, image]', publish)
+        self.assertIn('packages: write', text)
+        self.assertIn('--platform linux/amd64,linux/arm64', text)
+        self.assertIn('Check an existing published version', text)
+        self.assertIn('docker buildx imagetools inspect --raw', text)
+        self.assertIn('python3 .github/scripts/verify-image.py', text)
+        self.assertIn('latest', text)
         self.assertIn("if: github.event_name == 'push'", publish)
 
 

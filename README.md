@@ -119,6 +119,8 @@ CI requires exactly 100% PHPUnit line coverage for `app/`, with no excluded file
 
 ## Deployment
 
+The [wallpaper service Compose example](deploy/README.md) combines the frontend, API, one scheduler and optional PostgreSQL. Set image versions and credentials in the ignored `deploy/.env`; migrations remain an explicit step. The frontend proxies `/api` to the API on the private network. The authentication service has a separate deployment.
+
 The [production image](Dockerfile) runs PHP 8.4 with Apache as a non-root user on port 8080. It contains no secrets and no development dependencies, and it neither starts a scheduler nor migrates automatically. CI builds the image and exercises it against a disposable PostgreSQL 18 database.
 
 Runtime secrets, TLS and proxies, persistent locks, migrations, health checks, backups and rollback are summarized under [Operations](#operations). For non-Docker deployments, run `composer install --no-dev` and `composer check-platform-reqs --no-dev` with the production PHP executable. `/up` confirms that the application boots; it does not prove database availability or synchronization freshness.
