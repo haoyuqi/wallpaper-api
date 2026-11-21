@@ -65,6 +65,12 @@ services:
     command: ["php", "artisan", "schedule:work"]
     volumes:
       - scheduler_cache:/var/www/html/storage/framework/cache/data
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'artisan schedule:work' >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     mem_limit: ${SCHEDULER_MEMORY_LIMIT:-192m}
     cpus: ${SCHEDULER_CPU_LIMIT:-0.25}
 
