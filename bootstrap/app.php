@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedProxies = getenv('TRUSTED_PROXIES');
+
+        if ($trustedProxies !== false && trim($trustedProxies) !== '') {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
+
         $middleware->prepend(NormalizeApiErrors::class);
         // Calendar-date query values must be canonical, not silently trimmed.
         $middleware->trimStrings(except: [

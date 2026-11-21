@@ -1,35 +1,58 @@
 name: wallpaper
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "${DOCKER_LOG_MAX_SIZE:-10m}"
+    max-file: "${DOCKER_LOG_MAX_FILES:-3}"
+
+x-application: &application
+  image: ghcr.io/haoyuqi/wallpaper-api:${API_VERSION:-latest}
+  env_file:
+    - path: ${COMPOSE_ENV_FILE:-.env}
+      required: false
+  environment:
+    APP_KEY: ${APP_KEY:?Set APP_KEY in deploy/.env}
+    APP_ENV: production
+    APP_DEBUG: "false"
+    DB_CONNECTION: pgsql
+    QUEUE_CONNECTION: sync
+    LOG_CHANNEL: stderr
+  restart: unless-stopped
+  networks: [default, postgres, redis]
+  logging: *logging
+
 services:
   web:
     image: ghcr.io/haoyuqi/wallpaper-web:${WEB_VERSION:-latest}
     restart: unless-stopped
     environment:
-      API_UPSTREAM: http://api:8080
+      API_UPSTREAM: http://wallpaper-api-upstream:8080
     ports:
-      - "${WEB_PORT:-8080}:8080"
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      default:
+      ingress:
+        aliases:
+          - wallpaper-web-upstream
+    mem_limit: ${WEB_MEMORY_LIMIT:-64m}
+    cpus: ${WEB_CPU_LIMIT:-0.25}
+    logging: *logging
 
   api:
-    image: ghcr.io/haoyuqi/wallpaper-api:${API_VERSION:-latest}
-    restart: unless-stopped
-    environment: &api_environment
-      APP_KEY: ${APP_KEY:?Set APP_KEY in deploy/.env}
-      APP_URL: ${APP_URL:-http://localhost:8080}
-      APP_ENV: production
-      APP_DEBUG: "false"
-      DB_CONNECTION: pgsql
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_DATABASE: ${DB_DATABASE:-wallpaper}
-      DB_USERNAME: ${DB_USERNAME:-wallpaper}
-      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in deploy/.env}
-      DB_SSLMODE: ${DB_SSLMODE:-prefer}
-      CACHE_STORE: file
-      QUEUE_CONNECTION: sync
-      LOG_CHANNEL: stderr
+    <<: *application
+    networks:
+      default:
+      postgres:
+      redis:
+      ingress:
+        aliases:
+          - wallpaper-api-upstream
+    mem_limit: ${API_MEMORY_LIMIT:-384m}
+    cpus: ${API_CPU_LIMIT:-0.75}
     healthcheck:
       test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8080/up') === false ? 1 : 0);"]
       interval: 30s
@@ -38,16 +61,16 @@ services:
       retries: 3
 
   scheduler:
-    image: ghcr.io/haoyuqi/wallpaper-api:${API_VERSION:-latest}
-    restart: unless-stopped
-    environment: *api_environment
+    <<: *application
     command: ["php", "artisan", "schedule:work"]
     volumes:
       - scheduler_cache:/var/www/html/storage/framework/cache/data
+    mem_limit: ${SCHEDULER_MEMORY_LIMIT:-192m}
+    cpus: ${SCHEDULER_CPU_LIMIT:-0.25}
 
   postgres:
     image: postgres:18.6@sha256:3a4264520e121176619f54ff867d12774bc81e95e7b84db58d63bccdb6144b81
-    profiles: ["bundled-db"]
+    profiles: [database]
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-wallpaper}
@@ -60,7 +83,41 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks: [postgres]
+    mem_limit: ${DATABASE_MEMORY_LIMIT:-256m}
+    cpus: ${DATABASE_CPU_LIMIT:-0.5}
+    logging: *logging
+
+  redis:
+    image: redis:8.2.11-alpine@sha256:da23c2478319ceb4903857d77a2fd7aa5137d9e9d4c8165dafbacedac6403e95
+    profiles: [redis]
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [redis]
+    mem_limit: ${REDIS_MEMORY_LIMIT:-96m}
+    cpus: ${REDIS_CPU_LIMIT:-0.2}
+    logging: *logging
 
 volumes:
   scheduler_cache:
   postgres_data:
+  redis_data:
+
+networks:
+  default: {}
+  postgres:
+    name: ${POSTGRES_NETWORK:-${COMPOSE_PROJECT_NAME:-wallpaper}_postgres}
+    external: ${POSTGRES_NETWORK_EXTERNAL:-false}
+  redis:
+    name: ${REDIS_NETWORK:-${COMPOSE_PROJECT_NAME:-wallpaper}_redis}
+    external: ${REDIS_NETWORK_EXTERNAL:-false}
+  ingress:
+    name: ${INGRESS_NETWORK:-${COMPOSE_PROJECT_NAME:-wallpaper}_ingress}
+    external: ${INGRESS_NETWORK_EXTERNAL:-false}

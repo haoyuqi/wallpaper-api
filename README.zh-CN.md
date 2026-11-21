@@ -56,6 +56,11 @@ php artisan serve
 | `DB_DATABASE`、`DB_HOST`、`DB_PORT`、`DB_USERNAME`、`DB_PASSWORD` | SQLite 文件 | 所选驱动的连接配置。 |
 | `CORS_ALLOWED_ORIGINS` | `*` | 允许读取 API 的来源，逗号分隔；留空则关闭跨域读取。 |
 | `WALLPAPER_REQUESTS_PER_MINUTE` | `60` | 公开读取的每 IP 请求预算。 |
+| `TRUSTED_PROXIES` | 无 | 以逗号分隔的反向代理 CIDR；只有这些代理的 `X-Forwarded-*` 头会被信任。位于 ingress-nginx 或其他代理之后时必须设置，否则 `$request->ip()` 拿到的是代理地址。 |
+| `CACHE_STORE` | `file` | 缓存与限流存储。`redis` 使用生产镜像内置的扩展；`file` 不依赖外部服务。 |
+| `REDIS_HOST`、`REDIS_PORT`、`REDIS_USERNAME`、`REDIS_PASSWORD` | 无 | 所选 Redis 缓存的连接配置。 |
+| `REDIS_DB`、`REDIS_CACHE_DB` | `0`、`1` | 默认连接与缓存连接的逻辑数据库。共享实例上必须显式设置两者。 |
+| `REDIS_PREFIX`、`CACHE_PREFIX` | 由 `APP_NAME` 生成 | 连接与缓存 key 前缀。共享 Redis 上必须使用与 ACL key 模式匹配的唯一前缀。 |
 | `TEST_DB_CONNECTION`、`TEST_DB_*` | PostgreSQL `wallpaper_api_test` | PHPUnit 专用连接；凭据保存在被忽略的 `.env` 中。 |
 
 ## 同步元数据
@@ -119,15 +124,17 @@ CI 要求 `app/` 的 PHPUnit 行覆盖率恰好为 100%，不排除任何文件�
 
 ## 部署
 
-[壁纸服务 Compose 示例](deploy/README.md)将前端、API、唯一调度器及可选 PostgreSQL 组合部署。镜像版本和凭据写入被忽略的 `deploy/.env`，迁移需要显式执行。前端通过私有网络代理 `/api` 到 API；认证服务独立部署。
+[壁纸服务 Compose 示例](deploy/README.md)将前端、API、唯一调度器及可选 PostgreSQL、Redis 组合部署。被忽略的 `deploy/.env` 同时作为 Compose 变量文件和容器环境文件；`COMPOSE_PROFILES` 与 `*_NETWORK_EXTERNAL` 选择内置或已有依赖，容器通过稳定别名接入 ingress 网络。镜像版本、`APP_KEY`、凭据和 `TRUSTED_PROXIES` 都写入该文件；迁移需要显式执行。前端通过私有网络代理 `/api` 到 API，只有前端端口绑定到回环地址；认证服务独立部署。
 
-[生产镜像](Dockerfile) 使用 PHP 8.4 与 Apache，以非 root 用户运行并监听 8080。镜像不含凭据与开发依赖，也不会自动启动调度器或执行迁移。CI 会构建镜像，并用一次性的 PostgreSQL 18 数据库验证它。
+[生产镜像](Dockerfile) 使用 PHP 8.4 与 Apache，以非 root 用户运行并监听 8080，内置 `pdo_pgsql` 与 `redis` 扩展。镜像不含凭据与开发依赖，也不会自动启动调度器或执行迁移。CI 会构建镜像，并用一次性的 PostgreSQL 18 数据库验证它，包括 Redis 扩展。
 
 运行时凭据、TLS 与代理、持久化锁、迁移、健康检查、备份与回滚见[运维](#运维)一节。非 Docker 部署请使用生产 PHP 执行 `composer install --no-dev` 与 `composer check-platform-reqs --no-dev`。`/up` 只能确认应用已启动，不能证明数据库可用或同步数据是最新的。
 
 ## 运维
 
-- 在单台调度主机上每分钟执行一次 `schedule:run`。重叠锁使用文件缓存，因此该主机上的 `storage/framework/cache/data` 必须持久化，并在发布之间共享。
+- 在单台调度主机上每分钟执行一次 `schedule:run`。重叠锁使用文件缓存，因此该主机上的 `storage/framework/cache/data` 必须持久化，并在发布之间共享。Compose 示例通过唯一的 `scheduler` 服务运行 `schedule:work` 满足该要求；不要再添加第二个调度器或 cron 条目。
+- 将 `TRUSTED_PROXIES` 设置为反向代理的 CIDR。未设置时所有请求看起来都来自代理，每 IP 请求预算会被所有客户端共享。
+- 使用共享 Redis 时，分配独立的数据库、key 前缀，并使用 key 模式匹配该前缀的 ACL 用户。Redis ACL 按 key 模式隔离，不按逻辑数据库隔离；Redis 故障会使基于缓存的限流返回 HTTP 500。
 - 使用 `pg_dump --format=custom` 备份，并通过恢复到独立数据库、检查迁移状态与行数来验证可恢复性。`APP_KEY` 需在数据库备份之外单独保存。
 - 回滚时恢复上一个已验证的镜像 digest，保持相同的 `APP_KEY` 与兼容的表结构。生产环境不要执行 `migrate:fresh` 或删除表的回滚。
 - 关注 HTTP 5xx/429 比例、worker 内存、调度执行、失败审计码与备份时间。`/up` 只能证明应用已启动。
