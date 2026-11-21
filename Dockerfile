@@ -6,6 +6,8 @@ RUN php -r 'if (PHP_VERSION_ID < 80427) { fwrite(STDERR, "PHP 8.4.27 or newer is
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql \
+    && pecl install redis-6.2.0 \
+    && docker-php-ext-enable redis \
     && apt-mark manual libpq5 \
     && apt-get purge -y --auto-remove libpq-dev \
     && a2enmod rewrite \

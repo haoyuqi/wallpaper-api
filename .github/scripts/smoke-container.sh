@@ -15,6 +15,7 @@ docker exec "$container_name" test ! -e vendor/bin/phpunit
 docker exec "$container_name" test ! -e database/seeders/SmokeTestSeeder.php
 docker exec "$container_name" test ! -w bootstrap/app.php
 docker exec "$container_name" test -w bootstrap/cache
+docker exec "$container_name" php -m | grep -qx redis
 docker exec "$container_name" php artisan migrate --force --no-interaction
 docker exec "$container_name" php artisan config:cache
 docker exec "$container_name" php artisan route:cache

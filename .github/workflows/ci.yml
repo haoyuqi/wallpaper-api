@@ -295,12 +295,12 @@ jobs:
       - name: Build production image from the lockfile
         run: docker build --pull --platform linux/${{ matrix.arch }} --tag wallpaper-api:smoke .
 
-      - name: Validate Compose with external and bundled PostgreSQL
+      - name: Validate Compose with external and bundled dependencies
         run: |
           export APP_KEY="base64:$(openssl rand -base64 32 | tr -d '\n')"
           export DB_PASSWORD="$(openssl rand -hex 24)"
           docker compose -f deploy/compose.yaml config --quiet
-          docker compose -f deploy/compose.yaml --profile bundled-db config --quiet
+          docker compose -f deploy/compose.yaml --profile database --profile redis config --quiet
 
       - name: Start a disposable production container
         run: |

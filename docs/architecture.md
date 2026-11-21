@@ -8,7 +8,7 @@ in issues, PRs or the private Project.
 
 ## Deployment map
 
-The [Compose project](../deploy/compose.yaml) runs independently published web and API images. The web container serves static assets and proxies `/api` to private `api:8080`. The separate `scheduler` container runs `php artisan schedule:work` using the same API image and persists file-cache overlap locks in `scheduler_cache`. The optional `bundled-db` profile starts PostgreSQL 18; otherwise `DB_HOST` selects an external PostgreSQL database. Migrations run explicitly, never at image startup. Authentication is deployed separately.
+The [Compose project](../deploy/compose.yaml) runs independently published web and API images. The web container serves static assets and proxies `/api` to the API through the ingress network alias `wallpaper-api-upstream:8080`. The separate `scheduler` container runs `php artisan schedule:work` using the same API image and persists file-cache overlap locks in `scheduler_cache`. The optional `database` and `redis` profiles start PostgreSQL 18 and Redis 8; otherwise `DB_HOST` and `REDIS_HOST` select external services. Migrations run explicitly, never at image startup. Authentication is deployed separately.
 
 The API release workflow validates a stable tag on `master`, runs CI, publishes and verifies an amd64/arm64 GHCR image (and updates `latest`) before creating a GitHub Release. An existing version image is reused only when its revision and both platforms match the tag; an inconsistent version fails without being overwritten. Manual dispatch only previews release notes. The frontend has its own release and image version.
 
@@ -158,6 +158,16 @@ the example configuration and avoiding nonexistent cache/job tables. Environment
 overrides remain supported; selecting a database cache or queue requires the
 corresponding schema and operational setup.
 
+The production image bundles the `pdo_pgsql` and `redis` extensions.
+`CACHE_STORE=redis` uses the `cache` Redis connection, so `REDIS_CACHE_DB` and a
+unique key prefix must be set explicitly; on a shared instance the ACL user's key
+pattern must match that prefix. Redis ACLs separate keys by pattern, not by
+logical database, and a Redis outage makes cache-backed request limiting fail
+closed with HTTP 500. `TRUSTED_PROXIES` is read while the application boots and
+passed to the framework proxy middleware; it must contain only the reverse proxy
+CIDRs, otherwise forwarded client addresses are either ignored or accepted from
+untrusted peers.
+
 The daily schedule retains its named persistent file-cache overlap lock and
 previous-day UTC behavior. This assumes one scheduler host with persistent
 storage. Multi-instance scheduling and shared locking are deployment decisions,
@@ -166,7 +176,8 @@ for the schedule, locks and recovery.
 
 Unit tests cover calendar rules and Composer protocol validation. Feature tests
 cover the real installed command with a fake provider, services, persistence,
-scheduling, HTTP contracts and sanitized exceptions. The test base checks the
+scheduling, HTTP contracts, trusted proxy address handling and sanitized
+exceptions. The test base checks the
 dedicated connection before database traits can migrate; PostgreSQL tests require
 `wallpaper_api_test`. CI covers SQLite and PostgreSQL 18 on PHP 8.4.
 It also runs Larastan level 5, two independent lockfile audits (Composer audit
